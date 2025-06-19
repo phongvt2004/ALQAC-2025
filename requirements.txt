@@ -7,3 +7,4 @@ sentence-transformers
 underthesea
 wandb
 huggingface_hub
+python-dotenv
