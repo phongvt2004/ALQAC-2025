@@ -105,7 +105,6 @@ if __name__ == '__main__':
         warmup_ratio=0.1,
         fp16=True,  # Set to False if you get an error that your GPU can't run on FP16
         bf16=False,  # Set to True if you have a GPU that supports BF16
-        tf32=True,
         # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
         # Optional tracking/debugging parameters:
         eval_strategy="steps",
