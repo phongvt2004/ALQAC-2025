@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument("--round", default=1, type=str, help="training round ")
     parser.add_argument("--num_val", default=2500, type=int, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
-    parser.add_argument("--saved_model", default="", type=str, help="path to savd model directory.")
+    parser.add_argument("--saved_model", default="saved_model", type=str, help="path to savd model directory.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--lr", type=float, default=1e-5, help="learning rate for training")
     args = parser.parse_args()
