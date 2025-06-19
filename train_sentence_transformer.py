@@ -1,7 +1,17 @@
 from sentence_transformers import SentenceTransformer, models, InputExample, losses, LoggingHandler
+
+from sentence_transformers import (
+    SentenceTransformer,
+    SentenceTransformerTrainer,
+    SentenceTransformerTrainingArguments,
+)
+
+from sentence_transformers.losses import ContrastiveLoss
+from sentence_transformers.training_args import BatchSamplers
 from torch.utils.data import DataLoader
 import pickle
-from sentence_transformers import evaluation
+from sentence_transformers.evaluation import BinaryClassificationEvaluator
+from datasets import Dataset
 import logging
 import argparse
 import os
@@ -19,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_seq_length", default=256, type=int, help="maximum sequence length")
     parser.add_argument("--pair_data_path", type=str, default="", help="path to saved pair data")
     parser.add_argument("--round", default=1, type=str, help="training round ")
-    parser.add_argument("--num_val", default=2500, type=int, help="number of eval data")
+    parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
     parser.add_argument("--saved_model", default="saved_model", type=str, help="path to savd model directory.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
@@ -43,7 +53,7 @@ if __name__ == '__main__':
 
     save_pairs = load_pair_data(args.pair_data_path)
     print(f"There are {len(save_pairs)} pair sentences.")
-    train_examples = []
+    train_examples = {"question": [], "document": [], "label": []}
     sent1 = []
     sent2 = []
     scores = []
@@ -54,8 +64,10 @@ if __name__ == '__main__':
         question = pair["question"]
         document = pair["document"]
         if idx <= num_train:
-            example = InputExample(texts=[question, document], label=relevant)
-            train_examples.append(example)
+            
+            train_examples["question"].append(question)
+            train_examples["document"].append(document)
+            train_examples["label"].append(relevant)
         else:
             sent1.append(question)
             sent2.append(document)
@@ -63,22 +75,45 @@ if __name__ == '__main__':
 
     print("Number of sample for training: ", len(train_examples))
 
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=args.batch_size)
-    train_loss = losses.ContrastiveLoss(model)
+    dataset = Dataset.from_dict(train_examples).train_test_split(test_size=args.eval_size, seed=42)
+    train_dataset = dataset["train"]
+    eval_dataset = dataset["test"]
+    
+    loss = ContrastiveLoss(model)
 
     output_path = args.saved_model
     os.makedirs(output_path, exist_ok=True)
 
-    evaluator = evaluation.BinaryClassificationEvaluator(sent1, sent2, scores)
+    evaluator = BinaryClassificationEvaluator(sent1, sent2, scores)
     
-    model.fit(train_objectives=[(train_dataloader, train_loss)], 
-            epochs=args.epochs, 
-            warmup_steps=1000,
-            optimizer_params={'lr': 1e-5},
-            save_best_model=True,
-            evaluator=evaluator,
-            evaluation_steps=args.num_eval,
-            output_path=output_path,
-            use_amp=True,
-            show_progress_bar=True)
+    args = SentenceTransformerTrainingArguments(
+        # Required parameter:
+        output_dir=output_path,
+        # Optional training parameters:
+        num_train_epochs=args.epochs,
+        per_device_train_batch_size=args.batch_size,
+        per_device_eval_batch_size=args.batch_size*2,
+        learning_rate=args.lr,
+        warmup_ratio=0.1,
+        fp16=True,  # Set to False if you get an error that your GPU can't run on FP16
+        bf16=False,  # Set to True if you have a GPU that supports BF16
+        # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
+        # Optional tracking/debugging parameters:
+        eval_strategy="steps",
+        eval_steps=400,
+        save_strategy="steps",
+        save_steps=400,
+        logging_steps=200,
+        run_name=args.pretrained_model,  # Will be used in W&B if `wandb` is installed
+    )
+    trainer = SentenceTransformerTrainer(
+        model=model,
+        args=args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        loss=loss,
+        evaluator=evaluator,
+    )
+    trainer.train()
+    print(f"Model saved to {output_path}")
 
