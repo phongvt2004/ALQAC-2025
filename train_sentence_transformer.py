@@ -92,7 +92,7 @@ if __name__ == '__main__':
     
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     wandb.login(key=os.getenv("WANDB_API_KEY"))
-    wandb.init(project="ALQAC-2025")
+    wandb.init(project="ALQAC-2025", name=args.pretrained_model+"_run")
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
         output_dir=output_path,
