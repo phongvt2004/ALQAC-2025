@@ -6,3 +6,4 @@ transformers
 sentence-transformers
 underthesea
 wandb
+huggingface_hub
