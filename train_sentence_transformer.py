@@ -63,15 +63,9 @@ if __name__ == '__main__':
         relevant = float(pair["relevant"])
         question = pair["question"]
         document = pair["document"]
-        if idx <= num_train:
-            
-            train_examples["question"].append(question)
-            train_examples["document"].append(document)
-            train_examples["label"].append(relevant)
-        else:
-            sent1.append(question)
-            sent2.append(document)
-            scores.append(relevant)
+        train_examples["question"].append(question)
+        train_examples["document"].append(document)
+        train_examples["label"].append(relevant)
 
     print("Number of sample for training: ", len(train_examples))
 
@@ -84,7 +78,11 @@ if __name__ == '__main__':
     output_path = args.saved_model
     os.makedirs(output_path, exist_ok=True)
 
-    evaluator = BinaryClassificationEvaluator(sent1, sent2, scores)
+    evaluator = BinaryClassificationEvaluator(
+        sentences1=eval_dataset["question"],
+        sentences2=eval_dataset["document"],
+        labels=eval_dataset["label"],
+    )
     
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
