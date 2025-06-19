@@ -57,7 +57,6 @@ if __name__ == '__main__':
     sent1 = []
     sent2 = []
     scores = []
-    num_train = len(save_pairs) - args.num_val
 
     for idx, pair in enumerate(save_pairs):
         relevant = float(pair["relevant"])
