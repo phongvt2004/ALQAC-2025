@@ -6,6 +6,7 @@ from sentence_transformers import (
     SentenceTransformerTrainingArguments,
 )
 
+import utils
 from sentence_transformers.losses import ContrastiveLoss
 from sentence_transformers.training_args import BatchSamplers
 from torch.utils.data import DataLoader
@@ -72,7 +73,7 @@ if __name__ == '__main__':
         train_examples["document"].append(document)
         train_examples["label"].append(relevant)
 
-    print("Number of sample for training: ", len(train_examples))
+    print("Number of sample: ", len(train_examples["question"]))
 
     dataset = Dataset.from_dict(train_examples).train_test_split(test_size=args.eval_size, seed=42)
     train_dataset = dataset["train"]
@@ -91,8 +92,11 @@ if __name__ == '__main__':
     hub_model_id = args.hub_model_id
     
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    wandb.login(key=os.getenv("WANDB_API_KEY"))
-    wandb.init(project="ALQAC-2025", name=args.pretrained_model+"_run")
+    if utils.is_main_process():
+        wandb.login(key=os.getenv("WANDB_API_KEY"))
+        wandb.init(project="ALQAC-2025", name=hub_model_id+"_run")
+    else:
+        wandb.init(project="ALQAC-2025", name=hub_model_id+"_run", mode="disabled")
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
         output_dir=output_path,

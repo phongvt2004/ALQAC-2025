@@ -2,6 +2,24 @@ import string
 from underthesea import word_tokenize
 import os
 import json
+import torch.distributed as dist
+
+def is_dist_avail_and_initialized():
+    if not dist.is_available():
+        return False
+    if not dist.is_initialized():
+        return False
+    return True
+
+
+def get_rank():
+    if not is_dist_avail_and_initialized():
+        return 0
+    return dist.get_rank()
+
+
+def is_main_process():
+    return get_rank() == 0
 
 number = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 chars = ["a", "b", "c", "d", "đ", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"]
