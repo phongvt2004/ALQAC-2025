@@ -1,0 +1,7 @@
+rank_bm25
+numpy
+pandas
+tqdm
+transformers
+sentence-transformers
+underthesea
