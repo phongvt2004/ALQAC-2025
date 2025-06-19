@@ -101,6 +101,7 @@ if __name__ == '__main__':
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size*2,
         gradient_accumulation_steps=10,
+        gradient_checkpointing=True,
         learning_rate=args.lr,
         warmup_ratio=0.1,
         fp16=True,  # Set to False if you get an error that your GPU can't run on FP16
