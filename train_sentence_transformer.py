@@ -37,6 +37,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
     parser.add_argument("--saved_model", default="saved_model", type=str, help="path to savd model directory.")
+    parser.add_argument("--hub_model_id", default="", type=str, help="path to save model huggingface.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--lr", type=float, default=1e-5, help="learning rate for training")
     args = parser.parse_args()
@@ -87,6 +88,7 @@ if __name__ == '__main__':
         sentences2=eval_dataset["document"],
         labels=eval_dataset["label"],
     )
+    hub_model_id = args.hub_model_id
     
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     wandb.login(key=os.getenv("WANDB_API_KEY"))
@@ -120,5 +122,14 @@ if __name__ == '__main__':
         evaluator=evaluator,
     )
     trainer.train()
+    
+    if hub_model_id:
+        model.push_to_hub(hub_model_id, final_output_dir)
+        logger.info("Final model pushed to hub")
+    
+    wandb.finish()
+    writer.close() # Close TensorBoard writer
+    logger.info("Training finished!")
+    
     print(f"Model saved to {output_path}")
 
