@@ -5,8 +5,6 @@ from sentence_transformers import (
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments,
 )
-
-import utils
 from sentence_transformers.losses import ContrastiveLoss
 from sentence_transformers.training_args import BatchSamplers
 from torch.utils.data import DataLoader
@@ -92,11 +90,8 @@ if __name__ == '__main__':
     hub_model_id = args.hub_model_id
     
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    if utils.is_main_process():
-        wandb.login(key=os.getenv("WANDB_API_KEY"))
-        wandb.init(project="ALQAC-2025", name=hub_model_id+"_run")
-    else:
-        wandb.init(project="ALQAC-2025", name=hub_model_id+"_run", mode="disabled")
+    wandb.login(key=os.getenv("WANDB_API_KEY"))
+    wandb.init(project="ALQAC-2025", name=hub_model_id+"_run")
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
         output_dir=output_path,
