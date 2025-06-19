@@ -16,7 +16,12 @@ import logging
 import argparse
 import os
 #### Just some code to print debug information to stdout
+from huggingface_hub import login
+import wandb
 
+from dotenv import load_dotenv
+
+load_dotenv()
 def load_pair_data(pair_data_path):
     with open(pair_data_path, "rb") as pair_file:
         pairs = pickle.load(pair_file)
@@ -83,6 +88,9 @@ if __name__ == '__main__':
         labels=eval_dataset["label"],
     )
     
+    login(token=os.getenv("HUGGINGFACE_TOKEN"))
+    wandb.login(key=os.getenv("WANDB_API_KEY"))
+    wandb.init(project="ALQAC-2025")
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
         output_dir=output_path,
@@ -101,7 +109,7 @@ if __name__ == '__main__':
         save_strategy="steps",
         save_steps=400,
         logging_steps=200,
-        run_name=args.pretrained_model,  # Will be used in W&B if `wandb` is installed
+        run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
     )
     trainer = SentenceTransformerTrainer(
         model=model,
