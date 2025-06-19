@@ -100,10 +100,12 @@ if __name__ == '__main__':
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size*2,
+        gradient_accumulation_steps=10,
         learning_rate=args.lr,
         warmup_ratio=0.1,
-        fp16=False,  # Set to False if you get an error that your GPU can't run on FP16
-        bf16=True,  # Set to True if you have a GPU that supports BF16
+        fp16=True,  # Set to False if you get an error that your GPU can't run on FP16
+        bf16=False,  # Set to True if you have a GPU that supports BF16
+        tf32=True,
         # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
         # Optional tracking/debugging parameters:
         eval_strategy="steps",
@@ -112,6 +114,9 @@ if __name__ == '__main__':
         save_steps=2000,
         logging_steps=250,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
+        load_best_model_at_end=True,
+        push_to_hub=True if hub_model_id else False,
+        hub_model_id=hub_model_id if hub_model_id else None,
     )
     trainer = SentenceTransformerTrainer(
         model=model,
@@ -123,13 +128,8 @@ if __name__ == '__main__':
     )
     trainer.train()
     
-    if hub_model_id:
-        model.push_to_hub(hub_model_id, final_output_dir)
-        logger.info("Final model pushed to hub")
-    
     wandb.finish()
-    writer.close() # Close TensorBoard writer
-    logger.info("Training finished!")
+    logging.info("Training finished!")
     
     print(f"Model saved to {output_path}")
 
