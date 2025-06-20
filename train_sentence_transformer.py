@@ -64,7 +64,7 @@ if __name__ == '__main__':
     eval_examples = {"question": [], "document": [], "label": []}
     with open(os.path.join(args.data_path, "queries.json"), "r") as f:
         queries = json.load(f)
-    qid_list = queries.keys()
+    qid_list = list(queries.keys())
     random.seed(42)
     random.shuffle(qid_list)
     num_eval = int(len(qid_list) * args.eval_size)
