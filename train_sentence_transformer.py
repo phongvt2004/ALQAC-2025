@@ -129,10 +129,10 @@ if __name__ == '__main__':
         # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
         # Optional tracking/debugging parameters:
         eval_strategy="steps",
-        eval_steps=200,
+        eval_steps=400,
         save_strategy="steps",
-        save_steps=400,
-        logging_steps=100,
+        save_steps=600,
+        logging_steps=200,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
         load_best_model_at_end=True,
         push_to_hub=True if hub_model_id else False,
