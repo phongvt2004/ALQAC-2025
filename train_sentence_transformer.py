@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_seq_length", default=256, type=int, help="maximum sequence length")
     parser.add_argument("--pair_data_path", type=str, default="", help="path to saved pair data")
     parser.add_argument("--data_path", type=str, default="", help="path to data")
+    # parser.add_argument('--loss', choices=['rock', 'paper', 'scissors'])
     parser.add_argument("--round", default=1, type=str, help="training round ")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
