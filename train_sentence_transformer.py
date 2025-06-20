@@ -9,7 +9,8 @@ from sentence_transformers.losses import ContrastiveLoss
 from sentence_transformers.training_args import BatchSamplers
 from torch.utils.data import DataLoader
 import pickle
-from sentence_transformers.evaluation import BinaryClassificationEvaluator
+import json
+from sentence_transformers.evaluation import BinaryClassificationEvaluator, InformationRetrievalEvaluator
 from datasets import Dataset
 import logging
 import argparse
@@ -32,6 +33,7 @@ if __name__ == '__main__':
     parser.add_argument("--pretrained_model", default="", type=str, help="path to your language model")
     parser.add_argument("--max_seq_length", default=256, type=int, help="maximum sequence length")
     parser.add_argument("--pair_data_path", type=str, default="", help="path to saved pair data")
+    parser.add_argument("--data_path", type=str, default="", help="path to data")
     parser.add_argument("--round", default=1, type=str, help="training round ")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
@@ -58,25 +60,35 @@ if __name__ == '__main__':
 
     save_pairs = load_pair_data(args.pair_data_path)
     print(f"There are {len(save_pairs)} pair sentences.")
-    train_examples = {"question": [], "document": [], "label": []}
-    sent1 = []
-    sent2 = []
-    scores = []
+    train_examples = {"qid":[], "question": [], "document": [], "label": []}
 
     for idx, pair in enumerate(save_pairs):
         relevant = float(pair["relevant"])
+        qid = pair["qid"]
         question = pair["question"]
         document = pair["document"]
         train_examples["question"].append(question)
         train_examples["document"].append(document)
         train_examples["label"].append(relevant)
+        train_examples["qid"].append(qid)
 
     print("Number of sample: ", len(train_examples["question"]))
 
-    dataset = Dataset.from_dict(train_examples).train_test_split(test_size=args.eval_size, seed=42)
+    dataset = Dataset.from_dict(train_examples).train_test_split(test_size=args.eval_size, seed=42, stratify_by_column="qid")
     train_dataset = dataset["train"]
     eval_dataset = dataset["test"]
+    eval_qid = eval_dataset["qid"]
+    with open(os.path.join(args.data_path, "corpus.json"), "r") as f:
+        corpus = json.load(f)
+    with open(os.path.join(args.data_path, "queries.json"), "r") as f:
+        queries = json.load(f)
+    with open(os.path.join(args.data_path, "relevant_docs.json"), "rb") as f:
+        relevant_docs = pickle.load(f)
     
+    eval_relevant_docs = {}
+    for qid in eval_qid:
+        if qid in relevant_docs:
+            eval_relevant_docs[qid] = relevant_docs[qid]
     loss = ContrastiveLoss(model)
 
     output_path = args.saved_model
@@ -108,10 +120,10 @@ if __name__ == '__main__':
         # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
         # Optional tracking/debugging parameters:
         eval_strategy="steps",
-        eval_steps=1000,
+        eval_steps=200,
         save_strategy="steps",
-        save_steps=2000,
-        logging_steps=250,
+        save_steps=400,
+        logging_steps=100,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
         load_best_model_at_end=True,
         push_to_hub=True if hub_model_id else False,
@@ -127,6 +139,14 @@ if __name__ == '__main__':
     )
     trainer.train()
     
+    ir_evaluator = InformationRetrievalEvaluator(
+        queries=queries,
+        corpus=corpus,
+        relevant_docs=relevant_docs,
+    )
+    results = ir_evaluator(model)
+    for k, v in results.items():
+        print(f"{k}: {v}")
     wandb.finish()
     logging.info("Training finished!")
     

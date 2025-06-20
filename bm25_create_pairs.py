@@ -40,6 +40,7 @@ if __name__ == '__main__':
         # Save positive pairs
         for article in relevant_articles:
             save_dict = {}
+            save_dict["qid"] = question_id
             save_dict["question"] = question
             concat_id = article["law_id"] + " " + article["article_id"]
             save_dict["document"] = corpus[concat_id]
@@ -57,6 +58,7 @@ if __name__ == '__main__':
  
             if check == 0:
                 save_dict = {}
+                save_dict["qid"] = question_id"]
                 save_dict["question"] = question
                 concat_id = pred[0] + " " + pred[1]
                 save_dict["document"] = corpus[concat_id]

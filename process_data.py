@@ -38,3 +38,6 @@ if __name__ == '__main__':
         json.dump(corpus, f, ensure_ascii=False)
     with open(os.path.join(args.data_path, "queries.json"), "w", encoding="utf-8") as f:
         json.dump(queries, f, ensure_ascii=False)
+    with open(os.path.join(args.data_path, "relevant_docs.json"), "wb") as f:
+        import pickle
+        pickle.dump(relevant_docs, f)

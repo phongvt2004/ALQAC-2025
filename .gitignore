@@ -139,3 +139,5 @@ dmypy.json
 ./generated_data/
 ./zac2021-ltr-data/
 ALQAC_2025_data
+pair_data
+saved_model
