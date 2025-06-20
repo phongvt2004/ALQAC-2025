@@ -7,7 +7,6 @@ from rank_bm25 import *
 from utils import bm25_tokenizer, load_json
 import argparse
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--top_pair", default=20, type=int)

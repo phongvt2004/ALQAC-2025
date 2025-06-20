@@ -18,7 +18,7 @@ import os
 #### Just some code to print debug information to stdout
 from huggingface_hub import login
 import wandb
-
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -60,24 +60,33 @@ if __name__ == '__main__':
 
     save_pairs = load_pair_data(args.pair_data_path)
     print(f"There are {len(save_pairs)} pair sentences.")
-    train_examples = {"qid":[], "question": [], "document": [], "label": []}
-
+    train_examples = {"question": [], "document": [], "label": []}
+    eval_examples = {"question": [], "document": [], "label": []}
+    with open(os.path.join(args.data_path, "queries.json"), "r") as f:
+        queries = json.load(f)
+    qid_list = queries.keys()
+    random.seed(42)
+    random.shuffle(qid_list)
+    num_eval = int(len(qid_list) * args.eval_size)
+    eval_qid = qid_list[:num_eval]
     for idx, pair in enumerate(save_pairs):
         relevant = float(pair["relevant"])
         qid = pair["qid"]
         question = pair["question"]
         document = pair["document"]
-        train_examples["question"].append(question)
-        train_examples["document"].append(document)
-        train_examples["label"].append(relevant)
-        train_examples["qid"].append(qid)
+        if qid not in eval_qid:
+            train_examples["question"].append(question)
+            train_examples["document"].append(document)
+            train_examples["label"].append(relevant)
+        else:
+            eval_examples["question"].append(question)
+            eval_examples["document"].append(document)
+            eval_examples["label"].append(relevant)
 
     print("Number of sample: ", len(train_examples["question"]))
 
-    dataset = Dataset.from_dict(train_examples).train_test_split(test_size=args.eval_size, seed=42, stratify_by_column="qid")
-    train_dataset = dataset["train"]
-    eval_dataset = dataset["test"]
-    eval_qid = eval_dataset["qid"]
+    train_dataset = Dataset.from_dict(train_examples)
+    eval_dataset = Dataset.from_dict(eval_examples)
     with open(os.path.join(args.data_path, "corpus.json"), "r") as f:
         corpus = json.load(f)
     with open(os.path.join(args.data_path, "queries.json"), "r") as f:
@@ -142,7 +151,7 @@ if __name__ == '__main__':
     ir_evaluator = InformationRetrievalEvaluator(
         queries=queries,
         corpus=corpus,
-        relevant_docs=relevant_docs,
+        relevant_docs=eval_relevant_docs,
     )
     results = ir_evaluator(model)
     for k, v in results.items():
