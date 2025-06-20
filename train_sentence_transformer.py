@@ -5,7 +5,7 @@ from sentence_transformers import (
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments,
 )
-from sentence_transformers.losses import ContrastiveLoss
+from sentence_transformers.losses import ContrastiveLoss, MultipleNegativesRankingLoss
 from sentence_transformers.training_args import BatchSamplers
 from torch.utils.data import DataLoader
 import pickle
@@ -99,7 +99,10 @@ if __name__ == '__main__':
     for qid in eval_qid:
         if qid in relevant_docs:
             eval_relevant_docs[qid] = relevant_docs[qid]
-    loss = ContrastiveLoss(model)
+    if args.loss == "ContrastiveLoss":
+        loss = ContrastiveLoss(model)
+    elif args.loss == "MultipleNegativesRankingLoss":
+        loss = MultipleNegativesRankingLoss(model=model)
 
     output_path = args.saved_model
     os.makedirs(output_path, exist_ok=True)
