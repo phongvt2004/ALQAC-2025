@@ -77,7 +77,7 @@ def word_segmentation(text, save_dir='./vncorenlp'):
     os.makedirs(save_dir, exist_ok=True)
     download_model(save_dir=save_dir)
     rdrsegmenter = VnCoreNLP("./vncorenlp/VnCoreNLP-1.2.jar", annotators="wseg", max_heap_size='-Xmx2g')
-    word_sentences = rdrsegmenter.word_segment(text)
+    word_sentences = rdrsegmenter.tokenize(text)
     if len(word_sentences) > 0:
         return " ".join(word_sentences[0])
     else:
