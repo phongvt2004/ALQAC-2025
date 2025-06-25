@@ -8,5 +8,4 @@ underthesea
 wandb
 huggingface_hub
 python-dotenv
-py_vncorenlp
 vncorenlp
