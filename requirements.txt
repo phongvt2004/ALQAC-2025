@@ -7,4 +7,4 @@ sentence-transformers
 underthesea
 wandb
 huggingface_hub
-python-dotenv
+python-dotenvpy_vncorenlp

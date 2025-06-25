@@ -20,6 +20,7 @@ from huggingface_hub import login
 import wandb
 import random
 from dotenv import load_dotenv
+import utils
 
 load_dotenv()
 def load_pair_data(pair_data_path):
@@ -34,10 +35,10 @@ if __name__ == '__main__':
     parser.add_argument("--max_seq_length", default=256, type=int, help="maximum sequence length")
     parser.add_argument("--pair_data_path", type=str, default="", help="path to saved pair data")
     parser.add_argument("--data_path", type=str, default="", help="path to data")
-    parser.add_argument('--loss', choices=['ContrastiveLoss', 'MultipleNegativesRankingLoss'])
     parser.add_argument("--round", default=1, type=str, help="training round ")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--epochs", default=5, type=int, help="Number of training epochs")
+    parser.add_argument("--wseg", action="store_true", help="word segmentation")
     parser.add_argument("--saved_model", default="saved_model", type=str, help="path to savd model directory.")
     parser.add_argument("--hub_model_id", default="", type=str, help="path to save model huggingface.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
@@ -75,6 +76,9 @@ if __name__ == '__main__':
         qid = pair["qid"]
         question = pair["question"]
         document = pair["document"]
+        if args.wseg:
+            question = utils.word_segmentation(question)
+            document = utils.word_segmentation(document)
         if qid not in eval_qid:
             train_examples["question"].append(question)
             train_examples["document"].append(document)
@@ -99,10 +103,7 @@ if __name__ == '__main__':
     for qid in eval_qid:
         if qid in relevant_docs:
             eval_relevant_docs[qid] = relevant_docs[qid]
-    if args.loss == "ContrastiveLoss":
-        loss = ContrastiveLoss(model)
-    elif args.loss == "MultipleNegativesRankingLoss":
-        loss = MultipleNegativesRankingLoss(model=model)
+    loss = ContrastiveLoss(model)
 
     output_path = args.saved_model
     os.makedirs(output_path, exist_ok=True)

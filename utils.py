@@ -2,6 +2,7 @@ import string
 from underthesea import word_tokenize
 import os
 import json
+import py_vncorenlp
 
 number = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 chars = ["a", "b", "c", "d", "đ", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"]
@@ -31,3 +32,13 @@ def calculate_f2(precision, recall):
 
 def load_json(path):
     return json.load(open(path))
+
+def word_segmentation(text, save_dir='./vncorenlp'):
+    os.makedirs(save_dir, exist_ok=True)
+    py_vncorenlp.download_model(save_dir=save_dir)
+    rdrsegmenter = py_vncorenlp.VnCoreNLP(annotators=["wseg"], save_dir=save_dir)
+    word_sentences = rdrsegmenter.word_segment(text)
+    if len(word_sentences) > 0:
+        return " ".join(word_sentences)
+    else:
+        return ""
