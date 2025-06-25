@@ -13,7 +13,7 @@ def download_model(save_dir='./'):
     if save_dir[-1] == '/':
         save_dir = save_dir[:-1]
     if os.path.isdir(save_dir + "/models") and os.path.exists(save_dir + '/VnCoreNLP-1.2.jar'):
-        print("VnCoreNLP model folder " + save_dir + " already exists! Please load VnCoreNLP from this folder!")
+        pass
     else:
         os.mkdir(save_dir + "/models")
         os.mkdir(save_dir + "/models/dep")
@@ -72,11 +72,11 @@ def calculate_f2(precision, recall):
 
 def load_json(path):
     return json.load(open(path))
-
-def word_segmentation(text, save_dir='./vncorenlp'):
-    os.makedirs(save_dir, exist_ok=True)
-    download_model(save_dir=save_dir)
-    rdrsegmenter = VnCoreNLP("./vncorenlp/VnCoreNLP-1.2.jar", annotators="wseg", max_heap_size='-Xmx2g')
+os.makedirs("./vncorenlp", exist_ok=True)
+download_model(save_dir="./vncorenlp")
+rdrsegmenter = VnCoreNLP("./vncorenlp/VnCoreNLP-1.2.jar", annotators="wseg", max_heap_size='-Xmx2g')
+def word_segmentation(text):
+   
     word_sentences = rdrsegmenter.tokenize(text)
     if len(word_sentences) > 0:
         return " ".join([" ".join(sentence) for sentence in word_sentences])
