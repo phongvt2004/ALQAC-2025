@@ -24,10 +24,12 @@ if __name__ == '__main__':
     with open("saved_model/doc_refers_saved", "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
     corpus = json.load(open(os.path.join(args.data_path, "corpus.json")))
+    print(args.data_path)
+    print(corpus.keys())
     save_pairs = []
     top_n = args.top_pair
     for idx, item in tqdm(enumerate(data)):
-        question_id = item["question_id"]
+        question_id = item["question_id"] if not args.zalo else item["id"]
         question = item["text"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
