@@ -80,7 +80,7 @@ if __name__ == '__main__':
         if idx >= k:
             continue
 
-        question_id = item["question_id"]
+        question_id = item["question_id"] if not args.zalo else item["id"]
         question = item["text"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
