@@ -24,7 +24,7 @@ if __name__ == '__main__':
     query_text = []
     relevant_docs = {}
     for item in train_data:
-        qid = item["question_id"]
+        qid = item["question_id"] if not args.zalo else item["id"]
         query_ids.append(qid)
         query_text.append(item["text"])
         if qid not in relevant_docs:
