@@ -17,6 +17,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_path = os.path.join(args.data_path, "alqac25_train.json" if not args.zalo else "zalo_question.json")
+    print(train_path)
     data = json.load(open(train_path))
 
     with open(args.model_path, "rb") as bm_file:
@@ -24,8 +25,6 @@ if __name__ == '__main__':
     with open("saved_model/doc_refers_saved", "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
     corpus = json.load(open(os.path.join(args.data_path, "corpus.json")))
-    print(args.data_path)
-    print(corpus.keys())
     save_pairs = []
     top_n = args.top_pair
     for idx, item in tqdm(enumerate(data)):
