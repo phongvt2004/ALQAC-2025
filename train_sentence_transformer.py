@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument("--pretrained_model", default="", type=str, help="path to your language model")
     parser.add_argument("--max_seq_length", default=256, type=int, help="maximum sequence length")
     parser.add_argument("--pair_data_path", type=str, default="", help="path to saved pair data")
+    parser.add_argument("--pair_eval_path", type=str, default="", help="path to saved pair eval data")
     parser.add_argument("--data_path", type=str, default="", help="path to data")
     parser.add_argument("--round", default=1, type=str, help="training round ")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
@@ -64,26 +65,53 @@ if __name__ == '__main__':
     print(f"There are {len(save_pairs)} pair sentences.")
     train_examples = {"question": [], "document": [], "label": []}
     eval_examples = {"question": [], "document": [], "label": []}
-    with open(os.path.join(args.data_path, "queries.json"), "r") as f:
-        queries = json.load(f)
-    qid_list = list(queries.keys())
-    random.seed(42)
-    random.shuffle(qid_list)
-    num_eval = int(len(qid_list) * args.eval_size)
-    eval_qid = qid_list[:num_eval]
-    for idx, pair in enumerate(save_pairs):
-        relevant = float(pair["relevant"])
-        qid = pair["qid"]
-        question = pair["question"]
-        document = pair["document"]
-        if args.wseg:
-            question = utils.word_segmentation(question)
-            document = utils.word_segmentation(document)
-        if qid not in eval_qid:
+    
+    if not args.zalo:
+        with open(os.path.join(args.data_path, "queries.json"), "r") as f:
+            queries = json.load(f)
+        qid_list = list(queries.keys())
+        random.seed(42)
+        random.shuffle(qid_list)
+        num_eval = int(len(qid_list) * args.eval_size)
+        eval_qid = qid_list[:num_eval]
+        for idx, pair in enumerate(save_pairs):
+            relevant = float(pair["relevant"])
+            qid = pair["qid"]
+            question = pair["question"]
+            document = pair["document"]
+            if args.wseg:
+                question = utils.word_segmentation(question)
+                document = utils.word_segmentation(document)
+            if qid not in eval_qid:
+                train_examples["question"].append(question)
+                train_examples["document"].append(document)
+                train_examples["label"].append(relevant)
+            else:
+                eval_examples["question"].append(question)
+                eval_examples["document"].append(document)
+                eval_examples["label"].append(relevant)
+    else:
+        save_eval_pairs = load_pair_data(args.pair_eval_path)
+        for idx, pair in enumerate(save_pairs):
+            relevant = float(pair["relevant"])
+            qid = pair["qid"]
+            question = pair["question"]
+            document = pair["document"]
+            if args.wseg:
+                question = utils.word_segmentation(question)
+                document = utils.word_segmentation(document)
             train_examples["question"].append(question)
             train_examples["document"].append(document)
             train_examples["label"].append(relevant)
-        else:
+            
+        for idx, pair in enumerate(save_eval_pairs):
+            relevant = float(pair["relevant"])
+            qid = pair["qid"]
+            question = pair["question"]
+            document = pair["document"]
+            if args.wseg:
+                question = utils.word_segmentation(question)
+                document = utils.word_segmentation(document)
             eval_examples["question"].append(question)
             eval_examples["document"].append(document)
             eval_examples["label"].append(relevant)
@@ -136,10 +164,10 @@ if __name__ == '__main__':
         eval_strategy="steps",
         eval_steps=400,
         save_strategy="steps",
-        save_steps=1200,
+        save_steps=800,
+        save_total_limit=2,
         logging_steps=200,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
-        load_best_model_at_end=True,
         push_to_hub=True if hub_model_id else False,
         hub_model_id=hub_model_id if hub_model_id else None,
     )
@@ -152,15 +180,6 @@ if __name__ == '__main__':
         evaluator=evaluator,
     )
     trainer.train()
-    
-    ir_evaluator = InformationRetrievalEvaluator(
-        queries=queries,
-        corpus=corpus,
-        relevant_docs=eval_relevant_docs,
-    )
-    results = ir_evaluator(model)
-    for k, v in results.items():
-        print(f"{k}: {v}")
     wandb.finish()
     logging.info("Training finished!")
     

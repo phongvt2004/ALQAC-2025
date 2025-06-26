@@ -20,8 +20,10 @@ if __name__ == '__main__':
     # load document to save running time, 
     # must run 1 time if we change pre-process step
     parser.add_argument("--load-docs", action="store_false")
+    parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--num-eval", default=500, type=str)
     parser.add_argument("--data-path", default="ALQAC_2025_data", type=str, help="path to input data")
+    
     args = parser.parse_args()
     cfg = Config()
     
@@ -29,7 +31,7 @@ if __name__ == '__main__':
     os.makedirs(save_path, exist_ok=True)
 
     raw_data = args.data_path
-    corpus_path = os.path.join(raw_data, "alqac25_law.json")
+    corpus_path = os.path.join(raw_data, "alqac25_law.json" if not args.zalo else "zalo_corpus.json")
 
     data = json.load(open(corpus_path))
     print(args.load_docs)
@@ -62,7 +64,7 @@ if __name__ == '__main__':
 
     # Grid_search, evaluate on training question
     # raw_data = "zac2021-ltr-data"
-    train_path = os.path.join(raw_data, "alqac25_train.json")
+    train_path = os.path.join(raw_data, "alqac25_train.json" if not args.zalo else "zalo_question.json")
     data = json.load(open(train_path))
 
     bm25 = BM25Plus(documents, k1=cfg.bm25_k1, b=cfg.bm25_b)

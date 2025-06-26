@@ -5,10 +5,12 @@ import os
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", default="ALQAC_2025_data", type=str, help="path to input data")
+    parser.add_argument("--zalo", action="store_true", help="use Zalo data")
+    
     args = parser.parse_args()
-    with open(os.path.join(args.data_path, "alqac25_law.json"), "r", encoding="utf-8") as f:
+    with open(os.path.join(args.data_path, "alqac25_law.json" if not args.zalo else "zalo_corpus.json"), "r", encoding="utf-8") as f:
         corpus = json.load(f)
-    with open(os.path.join(args.data_path, "alqac25_train.json"), "r", encoding="utf-8") as f:
+    with open(os.path.join(args.data_path, "alqac25_train.json" if not args.zalo else "zalo_question.json"), "r", encoding="utf-8") as f:
         train_data = json.load(f)
         
     corpus_ids = []

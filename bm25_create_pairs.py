@@ -11,11 +11,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--top_pair", default=20, type=int)
     parser.add_argument("--model_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
+    parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--data_path", default="ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_pair_path", default="pair_data/", type=str, help="path to save pair sentence directory")
     args = parser.parse_args()
 
-    train_path = os.path.join(args.data_path, "alqac25_train.json")
+    train_path = os.path.join(args.data_path, "alqac25_train.json" if not args.zalo else "zalo_question.json")
     data = json.load(open(train_path))
 
     with open(args.model_path, "rb") as bm_file:
