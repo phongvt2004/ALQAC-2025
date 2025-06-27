@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument("--hub_model_id", default="", type=str, help="path to save model huggingface.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--lr", type=float, default=1e-5, help="learning rate for training")
+    parser.add_argument("--step", type=int, default=100, help="learning rate for training")
     parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     args = parser.parse_args()
 
@@ -160,11 +161,10 @@ if __name__ == '__main__':
         # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
         # Optional tracking/debugging parameters:
         eval_strategy="steps",
-        eval_steps=400,
+        eval_steps=args.step*2,
         save_strategy="steps",
-        save_steps=800,
-        save_total_limit=2,
-        logging_steps=200,
+        save_steps=args.step*4,
+        logging_steps=args.step,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
         push_to_hub=True if hub_model_id else False,
         hub_model_id=hub_model_id if hub_model_id else None,
