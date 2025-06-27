@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument("--hub_model_id", default="", type=str, help="path to save model huggingface.")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--lr", type=float, default=1e-5, help="learning rate for training")
+    parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s - %(message)s',
