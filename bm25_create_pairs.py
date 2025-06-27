@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--data_path", default="ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_pair_path", default="pair_data/", type=str, help="path to save pair sentence directory")
+    parser.add_argument("--saved_model_path", default="saved_model", type=str, help="path to saved model data")
     args = parser.parse_args()
 
     train_path = os.path.join(args.data_path, "alqac25_train.json" if not args.zalo else "zalo_question.json")
@@ -22,7 +23,7 @@ if __name__ == '__main__':
 
     with open(args.model_path, "rb") as bm_file:
         bm25 = pickle.load(bm_file)
-    with open("saved_model/doc_refers_saved", "rb") as doc_refer_file:
+    with open(os.path.join(args.saved_model_path, "doc_refers_saved"), "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
     corpus = json.load(open(os.path.join(args.data_path, "corpus.json")))
     save_pairs = []

@@ -9,7 +9,6 @@ from utils import bm25_tokenizer, calculate_f2
 # from config import Config
 
 class Config:
-    save_bm25 = "saved_model"
     top_k_bm25 = 2
     bm25_k1 = 0.4
     bm25_b = 0.6
@@ -23,11 +22,12 @@ if __name__ == '__main__':
     parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--num-eval", default=500, type=str)
     parser.add_argument("--data-path", default="ALQAC_2025_data", type=str, help="path to input data")
+    parser.add_argument("--save_path", default="saved_model", type=str, help="path to input data")
     
     args = parser.parse_args()
     cfg = Config()
     
-    save_path = cfg.save_bm25
+    save_path = args.save_path
     os.makedirs(save_path, exist_ok=True)
 
     raw_data = args.data_path
