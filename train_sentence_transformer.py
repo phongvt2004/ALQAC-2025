@@ -118,6 +118,7 @@ if __name__ == '__main__':
             eval_examples["label"].append(relevant)
 
     print("Number of sample: ", len(train_examples["question"]))
+    print("Number of eval sample: ", len(eval_examples["question"]))
 
     train_dataset = Dataset.from_dict(train_examples)
     eval_dataset = Dataset.from_dict(eval_examples)
