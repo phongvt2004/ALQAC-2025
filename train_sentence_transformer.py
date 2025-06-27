@@ -128,10 +128,6 @@ if __name__ == '__main__':
     with open(os.path.join(args.data_path, "relevant_docs.json"), "rb") as f:
         relevant_docs = pickle.load(f)
     
-    eval_relevant_docs = {}
-    for qid in eval_qid:
-        if qid in relevant_docs:
-            eval_relevant_docs[qid] = relevant_docs[qid]
     loss = ContrastiveLoss(model)
 
     output_path = args.saved_model
