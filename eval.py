@@ -70,7 +70,7 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
@@ -208,8 +208,8 @@ if __name__ == "__main__":
         best_precision = 0.0
         best_recall = 0.0
         for i in np.arange(min_score, max_score, args.step):
-            args.range_score = i
-            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
+            range_score = i
+            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score)
             print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
