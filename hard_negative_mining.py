@@ -34,9 +34,7 @@ if __name__ == '__main__':
     with open(os.path.join(args.saved_model_path, "doc_refers_saved"), "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
 
-    doc_path = os.path.join(args.path_legal)
-    df = open(doc_path)
-    doc_data = json.load(df)
+    doc_data = {}
     
     # load hard negative model
     model = SentenceTransformer(args.sentence_bert_path)
@@ -55,7 +53,7 @@ if __name__ == '__main__':
             else:
                 doc = v
             embed = model.encode(doc, show_progress_bar=False)
-            doc_data[k]['embedding'] = embed
+            doc_data[k] = embed
         # print(len(doc_data))
         list_emb_models = []
 
@@ -87,7 +85,7 @@ if __name__ == '__main__':
         list_embs = []
 
         for k, v in data.items():
-            emb_2 = torch.tensor(v['embedding']).unsqueeze(0)
+            emb_2 = torch.tensor(v).unsqueeze(0)
             list_embs.append(emb_2)
 
         matrix_emb = torch.cat(list_embs, dim=0)
