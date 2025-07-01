@@ -8,6 +8,7 @@ import os
 import pickle
 import glob
 from utils import bm25_tokenizer, calculate_f2
+import utils
 import random
 from sentence_transformers import SentenceTransformer, util
 
@@ -25,14 +26,16 @@ def encode_legal_data(data_path, models):
         list_emb_models.append(emb2_arr)
     return list_emb_models
 
-def encode_question(question_data, models):
+def encode_question(question_data, models, wseg):
     print("Start encoding questions.")
     question_embs = []
-    for model in models:
+    for idx, model in enumerate(models):
         emb_quest_dict = {}
         for qid, q in tqdm(question_data.items()):
             question_id = qid
             question = q
+            if wseg[idx]:
+                question = utils.word_segmentation(question)
             emb_quest_dict[question_id] = model.encode(question)
         question_embs.append(emb_quest_dict)
     return question_embs
@@ -50,9 +53,14 @@ def load_bm25(bm25_path):
 
 def load_models(root, model_names):
     models = []
+    wseg = []
     for model_path in tqdm(model_names):
         model_path = os.path.join(args.saved_model, model_path)
         models.append(SentenceTransformer(model_path))
+        if "wseg" in model_path:
+            wseg.append(True)
+        else:
+            wseg.append(False)
     return models
 
 def load_question_json(data_path):
@@ -73,10 +81,10 @@ if __name__ == "__main__":
 
     # define path to model
     
-    model_names = []
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_v1", "phonghoccode/ALQAC_2025_Embedding_top50_v1_wseg"]
 
     print("Start loading model.")
-    models = load_models(args.saved_model, model_names)
+    models, wseg = load_models(args.saved_model, model_names)
     print("Number of pretrained models: ", len(models))
 
     # load question from json file
@@ -93,7 +101,7 @@ if __name__ == "__main__":
         doc_refers = pickle.load(doc_refer_file)
     # load pre encoded for legal corpus
     if args.encode_legal_data:
-        emb_legal_data = encode_legal_data(args.raw_data, models)
+        emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
     else:
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
 
