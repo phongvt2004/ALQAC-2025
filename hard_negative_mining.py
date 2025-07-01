@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--sentence_bert_path", default="", type=str, help="path to round 1 sentence bert model")
     parser.add_argument("--data_path", default="ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_path", default="pair_data", type=str)
-    parser.add_argument("--top_k", default=20, type=str, help="top k hard negative mining")
+    parser.add_argument("--top_k", default=20, type=int, help="top k hard negative mining")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--path_doc_refer", default="generated_data/doc_refers_saved", type=str, help="path to doc refers")
     parser.add_argument("--saved_model_path", default="saved_model", type=str, help="path to saved model data")
