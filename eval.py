@@ -12,7 +12,7 @@ import utils
 import random
 from sentence_transformers import SentenceTransformer, util
 
-def encode_legal_data(data_path, models):
+def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
     corpus = json.load(open(os.path.join(data_path, "corpus.json")))
     # print(len(doc_data))
@@ -20,6 +20,8 @@ def encode_legal_data(data_path, models):
     for model in models:
         emb2_list = []
         for k, doc in tqdm(corpus.items()):
+            if wseg[idx]:
+                doc = utils.word_segmentation(doc)
             emb2 = model.encode(doc)
             emb2_list.append(emb2)
         emb2_arr = np.array(emb2_list)
@@ -105,7 +107,7 @@ if __name__ == "__main__":
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
 
     # encode question for query
-    question_embs = encode_question(question_items, models)
+    question_embs = encode_question(question_items, models, wseg)
 
     # define top n for compare and range of score
     top_n = 61425
@@ -127,9 +129,6 @@ if __name__ == "__main__":
         question = item["question"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
-        
-        
-
         weighted = [0.5, 0.5] 
         cos_sim = []
 
