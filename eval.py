@@ -128,6 +128,7 @@ if __name__ == "__main__":
     random.shuffle(qid_list)
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
+    print(eval_qid)
     print("Start calculating results.")
     k = num_eval
     for idx, item in tqdm(enumerate(data)):

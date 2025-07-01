@@ -76,6 +76,7 @@ if __name__ == '__main__':
         random.shuffle(qid_list)
         num_eval = int(len(qid_list) * args.eval_size)
         eval_qid = qid_list[:num_eval]
+        print(eval_qid)
         for idx, pair in enumerate(save_pairs):
             relevant = float(pair["relevant"])
             qid = pair["qid"]
