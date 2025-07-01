@@ -76,6 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     args = parser.parse_args()
