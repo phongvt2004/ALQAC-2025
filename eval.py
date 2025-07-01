@@ -82,8 +82,6 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     random.shuffle(qid_list)
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
-    print(eval_qid)
-    print("Start calculating results.")
     k = num_eval
     for idx, item in tqdm(enumerate(data)):
         question_id = item["question_id"]
@@ -200,7 +198,7 @@ if __name__ == "__main__":
     if args.find_best_score:
         print("Start finding best score.")
         if args.hybrid:
-            min_score = 1.5
+            min_score = 1.0
             max_score = 3.0
         else:
             min_score = 0.0
@@ -211,9 +209,7 @@ if __name__ == "__main__":
         best_recall = 0.0
         for i in np.arange(min_score, max_score, args.step):
             args.range_score = i
-            print(f"Range score: {i}")
             avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
-            print(f"Average F2: {avg_f2}, Average Precision: {avg_precision}, Average Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
                 best_precision = avg_precision
