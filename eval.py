@@ -19,6 +19,7 @@ def encode_legal_data(data_path, models, wseg):
     list_emb_models = []
     for idx, model in enumerate(models):
         emb2_list = []
+        print(model)
         for k, doc in tqdm(corpus.items()):
             if wseg[idx]:
                 doc = utils.word_segmentation(doc)
