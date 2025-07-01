@@ -112,5 +112,5 @@ if __name__ == '__main__':
 
     save_path = args.save_path
     os.makedirs(save_path, exist_ok=True)
-    with open(os.path.join(save_path, f"save_pairs_sbert_top{top_k}"), "wb") as pair_file:
+    with open(os.path.join(save_path, f"save_pairs_sbert_top{top_k}" if "wseg" not in args.sentence_bert_path else f"save_pairs_sbert_top{top_k}_wseg"), "wb") as pair_file:
         pickle.dump(save_pairs, pair_file)
