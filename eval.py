@@ -210,6 +210,7 @@ if __name__ == "__main__":
         for i in np.arange(min_score, max_score, args.step):
             args.range_score = i
             avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
+            print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
                 best_precision = avg_precision
