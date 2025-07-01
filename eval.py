@@ -116,6 +116,11 @@ if __name__ == "__main__":
     range_score = args.range_score
 
     pred_list = []
+    
+    total_f2 = 0
+    total_precision = 0
+    total_recall = 0
+    
     with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
         queries = json.load(f)
     qid_list = list(queries.keys())
