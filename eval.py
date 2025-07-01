@@ -90,7 +90,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         question = item["text"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
-        weighted = [0.5, 0.5] 
+        weighted = [args.model_1_weight, args.model_2_weight] 
         cos_sim = []
 
         for idx_2, _ in enumerate(models):
