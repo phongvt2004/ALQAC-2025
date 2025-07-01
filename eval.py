@@ -86,7 +86,8 @@ if __name__ == "__main__":
     model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_v1", "phonghoccode/ALQAC_2025_Embedding_top50_v1_wseg"]
 
     print("Start loading model.")
-    models, wseg = load_models(args.saved_model, model_names)
+    models = [SentenceTransformer(name) for name in model_names]
+    wseg = [("wseg" in name) for name in model_names]
     print("Number of pretrained models: ", len(models))
 
     # load question from json file
