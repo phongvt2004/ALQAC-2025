@@ -11,6 +11,10 @@ from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
 from sentence_transformers import SentenceTransformer, util
+from huggingface_hub import login
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -161,7 +165,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # define path to model
-    
+    login(token=os.getenv("HUGGINGFACE_TOKEN"))
     model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_v1", "phonghoccode/ALQAC_2025_Embedding_top50_v1_wseg"]
 
     print("Start loading model.")
