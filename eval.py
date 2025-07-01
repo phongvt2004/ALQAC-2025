@@ -70,6 +70,80 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
+    total_f2 = 0
+    total_precision = 0
+    total_recall = 0
+    
+    with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
+        queries = json.load(f)
+    qid_list = list(queries.keys())
+    random.seed(42)
+    random.shuffle(qid_list)
+    num_eval = int(len(qid_list) * args.eval_size)
+    eval_qid = qid_list[:num_eval]
+    print(eval_qid)
+    print("Start calculating results.")
+    k = num_eval
+    for idx, item in tqdm(enumerate(data)):
+        question_id = item["question_id"]
+        if question_id not in eval_qid:
+            continue
+        question = item["text"]
+        relevant_articles = item["relevant_articles"]
+        actual_positive = len(relevant_articles)
+        weighted = [0.5, 0.5] 
+        cos_sim = []
+
+        for idx_2, _ in enumerate(models):
+            emb1 = question_embs[idx_2][question_id]
+            emb2 = emb_legal_data[idx_2]
+            scores = util.cos_sim(emb1, emb2)
+            cos_sim.append(weighted[idx_2] * scores)
+        cos_sim = torch.cat(cos_sim, dim=0)
+        
+        cos_sim = torch.sum(cos_sim, dim=0).squeeze(0).numpy()
+        if args.hybrid:
+            tokenized_query = bm25_tokenizer(question)
+            doc_scores = bm25.get_scores(tokenized_query)
+            new_scores = doc_scores * cos_sim
+        else:
+            new_scores = cos_sim
+        max_score = np.max(new_scores)
+
+        predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
+        new_scores = new_scores[predictions]
+        
+        new_predictions = np.where(new_scores >= (max_score - range_score))[0]
+        map_ids = predictions[new_predictions]
+        new_scores = new_scores[new_scores >= (max_score - range_score)]
+
+        # if new_scores.shape[0] > 5:
+        #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
+        #     map_ids = map_ids[predictions_2]
+        true_positive = 0
+        false_positive = 0
+        
+        # post processing character error
+        for idx, idx_pred in enumerate(map_ids):
+            pred = doc_refers[idx_pred]
+            
+            for article in relevant_articles:
+                if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
+                    true_positive += 1
+                else:
+                    false_positive += 1
+        precision = true_positive/(true_positive + false_positive + 1e-20)
+        recall = true_positive/actual_positive
+        f2 = calculate_f2(precision, recall)
+        total_precision += precision
+        total_recall += recall
+        total_f2 += f2
+    avg_f2 = total_f2 / k
+    avg_precision = total_precision / k
+    avg_recall = total_recall / k
+    return avg_f2, avg_precision, avg_recall
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -83,6 +157,9 @@ if __name__ == "__main__":
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
+    parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
+    parser.add_argument("--step", default=0.1, type=float, help="number of eval data")
+    
     args = parser.parse_args()
 
     # define path to model
@@ -120,77 +197,35 @@ if __name__ == "__main__":
     range_score = args.range_score
 
     pred_list = []
-    
-    total_f2 = 0
-    total_precision = 0
-    total_recall = 0
-    
-    with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
-        queries = json.load(f)
-    qid_list = list(queries.keys())
-    random.seed(42)
-    random.shuffle(qid_list)
-    num_eval = int(len(qid_list) * args.eval_size)
-    eval_qid = qid_list[:num_eval]
-    print(eval_qid)
-    print("Start calculating results.")
-    k = num_eval
-    for idx, item in tqdm(enumerate(data)):
-        question_id = item["question_id"]
-        if question_id not in eval_qid:
-            continue
-        question = item["text"]
-        relevant_articles = item["relevant_articles"]
-        actual_positive = len(relevant_articles)
-        weighted = [0.5, 0.5] 
-        cos_sim = []
-
-        for idx_2, model in enumerate(models):
-            emb1 = question_embs[idx_2][question_id]
-            emb2 = emb_legal_data[idx_2]
-            scores = util.cos_sim(emb1, emb2)
-            cos_sim.append(weighted[idx_2] * scores)
-        cos_sim = torch.cat(cos_sim, dim=0)
-        
-        cos_sim = torch.sum(cos_sim, dim=0).squeeze(0).numpy()
+    if args.find_best_score:
+        print("Start finding best score.")
         if args.hybrid:
-            tokenized_query = bm25_tokenizer(question)
-            doc_scores = bm25.get_scores(tokenized_query)
-            new_scores = doc_scores * cos_sim
+            min_score = 1.5
+            max_score = 3.0
         else:
-            new_scores = cos_sim
-        max_score = np.max(new_scores)
-
-        predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
-        new_scores = new_scores[predictions]
-        
-        new_predictions = np.where(new_scores >= (max_score - range_score))[0]
-        map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - range_score)]
-
-        # if new_scores.shape[0] > 5:
-        #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
-        #     map_ids = map_ids[predictions_2]
-        true_positive = 0
-        false_positive = 0
-        
-        # post processing character error
-        dup_ans = []
-        for idx, idx_pred in enumerate(map_ids):
-            pred = doc_refers[idx_pred]
-            
-            for article in relevant_articles:
-                if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
-                    true_positive += 1
-                else:
-                    false_positive += 1
-        precision = true_positive/(true_positive + false_positive + 1e-20)
-        recall = true_positive/actual_positive
-        f2 = calculate_f2(precision, recall)
-        total_precision += precision
-        total_recall += recall
-        total_f2 += f2
+            min_score = 0.0
+            max_score = 0.5
+        best_score = 0.0
+        best_f2 = 0.0
+        best_precision = 0.0
+        best_recall = 0.0
+        for i in range(min_score, max_score, args.step):
+            args.range_score = i
+            print(f"Range score: {i}")
+            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
+            print(f"Average F2: {avg_f2}, Average Precision: {avg_precision}, Average Recall: {avg_recall}")
+            if best_f2 < avg_f2:
+                best_f2 = avg_f2
+                best_precision = avg_precision
+                best_recall = avg_recall
+                best_score = i
+        avg_f2 = best_f2
+        avg_precision = best_precision
+        avg_recall = best_recall
+        print(f"Best score: {best_score}, Best F2: {best_f2}, Best Precision: {best_precision}, Best Recall: {best_recall}")
+    else:
+        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
     
-    print(f"Average F2: \t\t\t\t{total_f2/k}")
-    print(f"Average Precision: {total_precision/k}")
-    print(f"Average Recall: {total_recall/k}\n")
+    print(f"Average F2: \t\t\t\t{avg_f2}")
+    print(f"Average Precision: {avg_precision}")
+    print(f"Average Recall: {avg_recall}\n")
