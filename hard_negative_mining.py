@@ -74,6 +74,7 @@ if __name__ == '__main__':
         
         for article in relevant_articles:
             save_dict = {}
+            save_dict["qid"] = question_id
             save_dict["question"] = question
             concat_id = article["law_id"] + " " + article["article_id"]
             save_dict["document"] = corpus[concat_id]
@@ -81,7 +82,7 @@ if __name__ == '__main__':
             save_pairs.append(save_dict)
         if "wseg" in args.sentence_bert_path:
             question = utils.word_segmentation(question)
-        encoded_question  = model.encode(question)
+        encoded_question  = model.encode(question, show_progress_bar=False)
         list_embs = []
 
         for k, v in data.items():
@@ -102,6 +103,7 @@ if __name__ == '__main__':
 
             if check == 0:
                 save_dict = {}
+                save_dict["qid"] = question_id
                 save_dict["question"] = question
                 concat_id = pred[0] + " " + pred[1]
                 save_dict["document"] = corpus[concat_id]
