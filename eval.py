@@ -18,14 +18,12 @@ def encode_legal_data(data_path, models, wseg):
     # print(len(doc_data))
     list_emb_models = []
     for idx, model in enumerate(models):
-        emb2_list = []
-        print(model)
+        doc_list = []
         for k, doc in tqdm(corpus.items()):
             if wseg[idx]:
                 doc = utils.word_segmentation(doc)
-            emb2 = model.encode(doc)
-            emb2_list.append(emb2)
-        emb2_arr = np.array(emb2_list)
+            doc_list.append(doc)
+        emb2_arr = model.encode(doc_list)
         list_emb_models.append(emb2_arr)
     return list_emb_models
 
@@ -39,7 +37,8 @@ def encode_question(question_data, models, wseg):
             question = q
             if wseg[idx]:
                 question = utils.word_segmentation(question)
-            emb_quest_dict[question_id] = model.encode(question)
+            emb_quest_dict[question_id] = model.encode(question, show_progress_bar=False)
+        
         question_embs.append(emb_quest_dict)
     return question_embs
 
