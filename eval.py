@@ -170,6 +170,8 @@ if __name__ == "__main__":
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
+    for model in models:
+        print(model)
     wseg = [("wseg" in name) for name in model_names]
     print("Number of pretrained models: ", len(models))
 
