@@ -55,7 +55,6 @@ def load_models(root, model_names):
     models = []
     wseg = []
     for model_path in tqdm(model_names):
-        model_path = os.path.join(args.saved_model, model_path)
         models.append(SentenceTransformer(model_path))
         if "wseg" in model_path:
             wseg.append(True)
@@ -70,7 +69,7 @@ def load_question_json(data_path):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw_data", default="zac2021-ltr-data", type=str)
+    parser.add_argument("--raw_data", default="ALQAC_2025_data", type=str)
     parser.add_argument("--saved_model", default="saved_model", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
