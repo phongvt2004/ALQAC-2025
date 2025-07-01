@@ -128,7 +128,7 @@ if __name__ == "__main__":
         question_id = item["question_id"]
         if question_id not in eval_qid:
             continue
-        question = item["question"]
+        question = item["text"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
         weighted = [0.5, 0.5] 
