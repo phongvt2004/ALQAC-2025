@@ -20,6 +20,8 @@ if __name__ == '__main__':
     parser.add_argument("--top_k", default=20, type=str, help="top k hard negative mining")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--path_doc_refer", default="generated_data/doc_refers_saved", type=str, help="path to doc refers")
+    parser.add_argument("--saved_model_path", default="saved_model", type=str, help="path to saved model data")
+    
     parser.add_argument("--path_legal", default="generated_data/legal_dict.json", type=str, help="path to legal dict")
     args = parser.parse_args()
 
@@ -29,7 +31,7 @@ if __name__ == '__main__':
     training_data = data
     print(len(training_data))
 
-    with open(args.path_doc_refer, "rb") as doc_refer_file:
+    with open(os.path.join(args.saved_model_path, "doc_refers_saved"), "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
 
     doc_path = os.path.join(args.path_legal)
@@ -41,8 +43,9 @@ if __name__ == '__main__':
 
     # add embedding for data
     # if you already have data with encoded sentence uncoment line 47 - 54
+    corpus = json.load(open(os.path.join(args.data_path, "corpus.json")))
+    
     if args.encode_legal_data:
-        corpus = json.load(open(os.path.join(args.data_path, "corpus.json")))
         
         import pickle
         embed_list = []
@@ -75,7 +78,7 @@ if __name__ == '__main__':
             save_dict = {}
             save_dict["question"] = question
             concat_id = article["law_id"] + " " + article["article_id"]
-            save_dict["document"] = doc_data[concat_id]["title"] + " " + doc_data[concat_id]["text"]
+            save_dict["document"] = corpus[concat_id]
             save_dict["relevant"] = 1
             save_pairs.append(save_dict)
         if args.wseg:
@@ -103,7 +106,7 @@ if __name__ == '__main__':
                 save_dict = {}
                 save_dict["question"] = question
                 concat_id = pred[0] + " " + pred[1]
-                save_dict["document"] = doc_data[concat_id]["title"] + " " + doc_data[concat_id]["text"]
+                save_dict["document"] = corpus[concat_id]
                 save_dict["relevant"] = 0
                 save_pairs.append(save_dict)
 
