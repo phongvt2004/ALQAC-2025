@@ -52,17 +52,14 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.INFO,
                         handlers=[LoggingHandler()])
-    # if round == 1:
-    #     print(f"Training round 1")
-    #     word_embedding_model = models.Transformer(args.pretrained_model, max_seq_length=args.max_seq_length)
-    #     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-    #     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
-    #     print(model)
-    # else:
-    #     print("Training round 2")
-    model = SentenceTransformer(args.pretrained_model)
-    print(model)
-
+    if round == 1:
+        print(f"Training round 1")
+        word_embedding_model = models.Transformer(args.pretrained_model, max_seq_length=args.max_seq_length)
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+        print(model)
+    else:
+        model = SentenceTransformer(args.pretrained_model)
     save_pairs = load_pair_data(args.pair_data_path)
     print(f"There are {len(save_pairs)} pair sentences.")
     train_examples = {"question": [], "document": [], "label": []}
