@@ -17,7 +17,7 @@ def encode_legal_data(data_path, models, wseg):
     corpus = json.load(open(os.path.join(data_path, "corpus.json")))
     # print(len(doc_data))
     list_emb_models = []
-    for model in models:
+    for idx, model in enumerate(models):
         emb2_list = []
         for k, doc in tqdm(corpus.items()):
             if wseg[idx]:
