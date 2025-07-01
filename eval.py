@@ -115,7 +115,7 @@ if __name__ == "__main__":
     range_score = args.range_score
 
     pred_list = []
-    with open(os.path.join(args.data_path, "queries.json"), "r") as f:
+    with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
         queries = json.load(f)
     qid_list = list(queries.keys())
     random.seed(42)
