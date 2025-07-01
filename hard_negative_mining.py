@@ -79,7 +79,7 @@ if __name__ == '__main__':
             save_dict["document"] = corpus[concat_id]
             save_dict["relevant"] = 1
             save_pairs.append(save_dict)
-        if args.wseg:
+        if if "wseg" in args.sentence_bert_path:
             question = utils.word_segmentation(question)
         encoded_question  = model.encode(question)
         list_embs = []
