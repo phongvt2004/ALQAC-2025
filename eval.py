@@ -132,7 +132,7 @@ if __name__ == "__main__":
         tokenized_query = bm25_tokenizer(question)
         doc_scores = bm25.get_scores(tokenized_query)
 
-        weighted = [0.1, 0.3, 0.4, 0.2] 
+        weighted = [0.5, 0.5] 
         cos_sim = []
 
         for idx_2, model in enumerate(models):
