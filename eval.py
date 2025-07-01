@@ -129,8 +129,7 @@ if __name__ == "__main__":
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
         
-        tokenized_query = bm25_tokenizer(question)
-        doc_scores = bm25.get_scores(tokenized_query)
+        
 
         weighted = [0.5, 0.5] 
         cos_sim = []
@@ -143,7 +142,12 @@ if __name__ == "__main__":
         cos_sim = torch.cat(cos_sim, dim=0)
         
         cos_sim = torch.sum(cos_sim, dim=0).squeeze(0).numpy()
-        new_scores = doc_scores * cos_sim
+        if args.hybrid:
+            tokenized_query = bm25_tokenizer(question)
+            doc_scores = bm25.get_scores(tokenized_query)
+            new_scores = doc_scores * cos_sim
+        else:
+            new_scores = cos_sim
         max_score = np.max(new_scores)
 
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
