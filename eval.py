@@ -25,6 +25,8 @@ def encode_legal_data(data_path, models, wseg):
             doc_list.append(doc)
         emb2_arr = model.encode(doc_list)
         list_emb_models.append(emb2_arr)
+    with open("encoded_legal_data.pkl", "wb") as f:
+        pickle.dump(list_emb_models, f)
     return list_emb_models
 
 def encode_question(question_data, models, wseg):
@@ -77,6 +79,8 @@ if __name__ == "__main__":
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
+    parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
+    parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     args = parser.parse_args()
