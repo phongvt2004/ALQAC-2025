@@ -165,8 +165,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # define path to model
-    print(os.getenv("HUGGINGFACE_TOKEN"))
-    login(token=os.getenv("HUGGINGFACE_TOKEN"))
     model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_v1", "phonghoccode/ALQAC_2025_Embedding_top50_v1_wseg"]
 
     print("Start loading model.")
