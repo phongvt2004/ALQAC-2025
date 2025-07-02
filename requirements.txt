@@ -11,3 +11,4 @@ python-dotenv
 vncorenlp
 datasets
 pyvi
+transformers[torch]
