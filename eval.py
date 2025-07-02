@@ -10,9 +10,14 @@ import glob
 from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer, util, CrossEncoder
 from huggingface_hub import login
 from dotenv import load_dotenv
+from scipy.stats import zscore
+from sklearn.preprocessing import MinMaxScaler
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+
 
 load_dotenv()
 
@@ -74,7 +79,7 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score):
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, rerank_top_k=100, final_top_m=5, reranker=None):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
@@ -111,12 +116,25 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             new_scores = doc_scores * cos_sim
         else:
             new_scores = cos_sim
+        
+        # # 1) initial retrieve
+        # initial_idxs = np.argpartition(new_scores, len(new_scores) - rerank_top_k)[-rerank_top_k:]
+        # # 2) get those doc texts
+        # top_docs = [ doc_texts[i] for i in initial_idxs ]
+        # # 3) rerank
+        # rerank_inputs = [(question, doc) for doc in top_docs]
+        # rerank_scores = reranker.predict(rerank_inputs)
+        # # 4) sort by rerank_scores
+        # rerank_order = np.argsort(-rerank_scores)
+        # final_idxs = initial_idxs[rerank_order][:final_top_m]
+        
         max_score = np.max(new_scores)
-
+        print(new_scores)
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         new_scores = new_scores[predictions]
         
         new_predictions = np.where(new_scores >= (max_score - range_score))[0]
+        print(predictions)
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - range_score)]
 
@@ -170,6 +188,9 @@ if __name__ == "__main__":
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
+    # tokenizer = AutoTokenizer.from_pretrained('AITeamVN/Vietnamese_Reranker')
+    # reranker = AutoModelForSequenceClassification.('AITeamVN/Vietnamese_Reranker')
+    # reranker = CrossEncoder('AITeamVN/Vietnamese_Reranker')
     for model in models:
         print(model)
     wseg = [("wseg" in name) for name in model_names]

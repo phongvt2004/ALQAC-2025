@@ -8,7 +8,8 @@ underthesea
 wandb
 huggingface_hub
 python-dotenv
-vncorenlp
 datasets
 pyvi
 transformers[torch]
+scipy
+scikit-learn
