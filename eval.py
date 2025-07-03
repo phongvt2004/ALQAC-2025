@@ -195,7 +195,7 @@ if __name__ == "__main__":
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
     tokenizer = AutoTokenizer.from_pretrained('AITeamVN/Vietnamese_Reranker')
-    reranker = AutoModelForSequenceClassification.('AITeamVN/Vietnamese_Reranker')
+    reranker = AutoModelForSequenceClassification.from_pretrained('AITeamVN/Vietnamese_Reranker')
     # reranker = CrossEncoder('AITeamVN/Vietnamese_Reranker')
     for model in models:
         print(model)
