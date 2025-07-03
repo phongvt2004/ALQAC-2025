@@ -120,7 +120,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         # 1) initial retrieve
         initial_idxs = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         # 2) get those doc texts
-        top_docs = [ doc_refers[i] for i in initial_idxs ]
+        top_docs = [ doc_refers[i][2] for i in initial_idxs ]
         print(top_docs)
         # 3) rerank
         rerank_inputs = [[question, doc] for doc in top_docs]
