@@ -125,7 +125,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         rerank_inputs = [[question, doc] for doc in top_docs]
         MAX_LENGTH = 2304
         with torch.no_grad():
-            inputs = tokenizer(rerank_inputs, padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors="np")
+            inputs = tokenizer(rerank_inputs, padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors="pt")
             scores = reranker(**inputs, return_dict=True).logits.view(-1, ).float()
         max_score = np.max(new_scores)
         
