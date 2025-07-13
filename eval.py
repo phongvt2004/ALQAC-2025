@@ -31,7 +31,7 @@ def encode_legal_data(data_path, models, wseg):
         for k, doc in tqdm(corpus.items()):
             if wseg[idx]:
                 doc = utils.word_segmentation(doc)
-            doc_list.append(model.encode(doc))
+            doc_list.append(model.encode(doc, show_progress_bar=False))
         emb2_arr = np.array(doc_list)
         list_emb_models.append(emb2_arr)
     with open("encoded_legal_data.pkl", "wb") as f:
