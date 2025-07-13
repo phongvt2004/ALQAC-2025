@@ -119,6 +119,8 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         
         # 1) initial retrieve
         initial_idxs = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
+        predictions = np.where(scores >= (max_score - range_score))[0]
+        new_predictions = initial_idxs[predictions]
         # 2) get those doc texts
         top_docs = [ doc_refers[i][2] for i in initial_idxs ]
         # 3) rerank
@@ -196,6 +198,7 @@ if __name__ == "__main__":
     models = [SentenceTransformer(name) for name in model_names]
     tokenizer = AutoTokenizer.from_pretrained('AITeamVN/Vietnamese_Reranker')
     reranker = AutoModelForSequenceClassification.from_pretrained('AITeamVN/Vietnamese_Reranker')
+    reranker.eval()
     # reranker = CrossEncoder('AITeamVN/Vietnamese_Reranker')
     for model in models:
         print(model)
