@@ -176,10 +176,6 @@ if __name__ == "__main__":
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
-    tokenizer = AutoTokenizer.from_pretrained('AITeamVN/Vietnamese_Reranker')
-    reranker = AutoModelForSequenceClassification.from_pretrained('AITeamVN/Vietnamese_Reranker')
-    reranker.eval()
-    # reranker = CrossEncoder('AITeamVN/Vietnamese_Reranker')
     for model in models:
         print(model)
     wseg = [("wseg" in name) for name in model_names]
@@ -225,7 +221,7 @@ if __name__ == "__main__":
         best_recall = 0.0
         for i in np.arange(min_score, max_score, args.step):
             range_score = i
-            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker)
+            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score)
             # print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
