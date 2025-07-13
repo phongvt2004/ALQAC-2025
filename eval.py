@@ -117,34 +117,13 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         else:
             new_scores = cos_sim
         
-        # 1) initial retrieve
-        initial_idxs = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
-        predictions = np.where(scores >= (max_score - range_score))[0]
-        new_predictions = initial_idxs[predictions]
-        # 2) get those doc texts
-        top_docs = [ doc_refers[i][2] for i in initial_idxs ]
-        # 3) rerank
-        rerank_inputs = [[question, doc] for doc in top_docs]
-        MAX_LENGTH = 2304
-        with torch.no_grad():
-            inputs = tokenizer(rerank_inputs, padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors="pt")
-            scores = reranker(**inputs, return_dict=True).logits.view(-1, ).float()
         max_score = np.max(new_scores)
+        predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
+        new_scores = new_scores[predictions]
         
-        new_predictions = np.where(scores >= (max_score - range_score))[0]
-        map_ids = initial_idxs[new_predictions]
+        new_predictions = np.where(new_scores >= (max_score - range_score))[0]
+        map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - range_score)]
-        # # 4) sort by rerank_scores
-        # rerank_order = np.argsort(-rerank_scores)
-        # final_idxs = initial_idxs[rerank_order][:final_top_m]
-        
-        # max_score = np.max(new_scores)
-        # predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
-        # new_scores = new_scores[predictions]
-        
-        # new_predictions = np.where(new_scores >= (max_score - range_score))[0]
-        # map_ids = predictions[new_predictions]
-        # new_scores = new_scores[new_scores >= (max_score - range_score)]
 
         # if new_scores.shape[0] > 5:
         #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
@@ -183,6 +162,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
+    parser.add_argument("--model_3_weight", default=0.0, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
@@ -192,7 +172,7 @@ if __name__ == "__main__":
 
     # define path to model
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "Qwen/Qwen3-Embedding-4B"]
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
