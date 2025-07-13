@@ -48,6 +48,8 @@ def encode_question(question_data, models, wseg):
             question = q
             if wseg[idx]:
                 question = utils.word_segmentation(question)
+            if idx == 2:  # Qwen model
+                emb_quest_dict[question_id] = model.encode(question, show_progress_bar=False, prompt_name="query")
             emb_quest_dict[question_id] = model.encode(question, show_progress_bar=False)
         
         question_embs.append(emb_quest_dict)
