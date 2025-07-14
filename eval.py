@@ -127,7 +127,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - 1.5)]
         
-        rerank_scores = qwen_vllm.reranking(question, [doc_refers[i][2] for i in map_ids], max_length=8192)
+        rerank_scores = qwen_vllm.reranking(question, [doc_refers[i][2] for i in map_ids])
         max_rerank_score = np.max(rerank_scores)
         new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
         map_ids = map_ids[new_predictions]
