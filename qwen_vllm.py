@@ -7,14 +7,15 @@ import logging
 
 import torch
 
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, is_torch_npu_available
 from vllm import LLM, SamplingParams
+from vllm.distributed.parallel_state import destroy_model_parallel
 import gc
 import math
 from vllm.inputs.data import TokensPrompt
 
 tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-Reranker-0.6B')
-model = LLM(model='Qwen/Qwen3-Reranker-0.6B', max_model_len=10000, enable_prefix_caching=True, gpu_memory_utilization=0.8)
+model = LLM(model='Qwen/Qwen3-Reranker-0.6B', max_model_len=10000, enable_prefix_caching=True, gpu_memory_utilization=0.8, dtype="float32")
 tokenizer.padding_side = "left"
 tokenizer.pad_token = tokenizer.eos_token
 suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
