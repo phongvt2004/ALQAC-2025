@@ -7,9 +7,8 @@ import logging
 
 import torch
 
-from transformers import AutoTokenizer, is_torch_npu_available
+from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from vllm.distributed.parallel_state import destroy_model_parallel
 import gc
 import math
 from vllm.inputs.data import TokensPrompt
