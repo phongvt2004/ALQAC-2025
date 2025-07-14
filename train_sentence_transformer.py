@@ -114,7 +114,8 @@ if __name__ == '__main__':
             eval_examples["question"].append(question)
             eval_examples["document"].append(document)
             eval_examples["label"].append(relevant)
-
+    print(eval_examples)
+    print(train_examples)
     print("Number of sample: ", len(train_examples["question"]))
     print("Number of eval sample: ", len(eval_examples["question"]))
 
