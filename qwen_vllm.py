@@ -69,27 +69,23 @@ def compute_logits(model, messages, sampling_params, true_token, false_token):
 
 def reranking(
     query: str,
-    documents: List[str],
-    max_length: int = 8192,
-) -> Dict[str, float]:
+    documents: List[str]
+) -> List[float]:
     """
     Rerank documents based on a query using a pre-trained model.
     
     Args:
         query (str): The search query.
         documents (List[str]): List of documents to be reranked.
-        instruction (str): Instruction for the model.
-        max_length (int): Maximum length of input tokens.
-    
     Returns:
-        Dict[str, float]: A dictionary with document indices as keys and their scores as values.
+        List[float]: A lisr of scores.
     """
     
     
     pairs = list(zip([query] * len(documents), documents))
     inputs = process_inputs(pairs, task, max_length-len(suffix_tokens), suffix_tokens)
     scores = compute_logits(model, inputs, sampling_params, true_token, false_token)
-    return {i: score for i, score in enumerate(scores)}
+    return scores
 
 def release_model():
     destroy_model_parallel()

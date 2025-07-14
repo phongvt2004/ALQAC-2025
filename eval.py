@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from scipy.stats import zscore
 from sklearn.preprocessing import MinMaxScaler
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
+import qwen_vllm
 
 
 load_dotenv()
@@ -124,10 +124,15 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         new_scores = new_scores[predictions]
         
-        new_predictions = np.where(new_scores >= (max_score - range_score))[0]
+        new_predictions = np.where(new_scores >= (max_score - 1.5))[0]
         map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - range_score)]
-
+        new_scores = new_scores[new_scores >= (max_score - 1.5)]
+        
+        rerank_scores = qwen_vllm.reranking(question, [doc_refers[i][2] for i in map_ids], max_length=8192)
+        max_rerank_score = np.max(rerank_scores)
+        new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
+        map_ids = map_ids[new_predictions]
+        new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
         # if new_scores.shape[0] > 5:
         #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
         #     map_ids = map_ids[predictions_2]
