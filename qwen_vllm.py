@@ -14,9 +14,8 @@ import gc
 import math
 from vllm.inputs.data import TokensPrompt
 
-number_of_gpu = torch.cuda.device_count()
 tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-Reranker-0.6B')
-model = LLM(model='Qwen/Qwen3-Reranker-0.6B', tensor_parallel_size=number_of_gpu, max_model_len=10000, enable_prefix_caching=True, gpu_memory_utilization=0.8)
+model = LLM(model='Qwen/Qwen3-Reranker-0.6B', max_model_len=10000, enable_prefix_caching=True, gpu_memory_utilization=0.8)
 tokenizer.padding_side = "left"
 tokenizer.pad_token = tokenizer.eos_token
 suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
