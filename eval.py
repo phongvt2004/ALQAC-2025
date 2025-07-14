@@ -205,7 +205,7 @@ if __name__ == "__main__":
     question_embs = encode_question(question_items, models, wseg)
 
     # define top n for compare and range of score
-    top_n = 100
+    top_n = 1000
     range_score = args.range_score
 
     pred_list = []
