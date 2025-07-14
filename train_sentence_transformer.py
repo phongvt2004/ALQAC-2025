@@ -131,11 +131,16 @@ if __name__ == '__main__':
     output_path = args.saved_model
     os.makedirs(output_path, exist_ok=True)
 
+    eval_questions = list(eval_dataset["question"])
+    eval_documents = list(eval_dataset["document"])
+    eval_labels = list(eval_dataset["label"])
+
     evaluator = BinaryClassificationEvaluator(
-        sentences1=eval_dataset["question"],
-        sentences2=eval_dataset["document"],
-        labels=eval_dataset["label"],
+        sentences1=eval_questions,
+        sentences2=eval_documents,
+        labels=eval_labels,
     )
+
     hub_model_id = args.hub_model_id
     
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
