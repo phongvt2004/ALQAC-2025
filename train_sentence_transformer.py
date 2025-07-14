@@ -167,7 +167,7 @@ if __name__ == '__main__':
         save_steps=args.step*4,
         logging_steps=args.step,
         load_best_model_at_end=True,
-        prompts={"query": model.prompts["query"]} if "qwen" in args.pretrained_model else None,
+        prompts={"query": model.prompts["query"]} if "Qwen" in args.pretrained_model else None,
         run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
         push_to_hub=True if hub_model_id else False,
         hub_model_id=hub_model_id if hub_model_id else None,
