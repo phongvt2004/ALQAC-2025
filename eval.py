@@ -230,7 +230,7 @@ if __name__ == "__main__":
         print("Start finding best score.")
         if args.hybrid:
             min_score = 1.0
-            max_score = 4.0
+            max_score = 6.0
         else:
             min_score = 0.0
             max_score = 0.5
