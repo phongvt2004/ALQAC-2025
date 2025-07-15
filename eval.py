@@ -233,7 +233,7 @@ if __name__ == "__main__":
             max_score = 6.0
         else:
             min_score = 0.0
-            max_score = 0.5
+            max_score = 1.0
         best_score_f2 = 0.0
         best_score_precision = 0.0
         best_score_recall = 0.0
