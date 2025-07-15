@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from scipy.stats import zscore
 from sklearn.preprocessing import MinMaxScaler
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import qwen_vllm
+from reranker import create_reranker, reranking
 
 
 load_dotenv()
@@ -123,15 +123,15 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         new_scores = new_scores[predictions]
         
-        new_predictions = np.where(new_scores >= (max_score - 1.5))[0]
+        new_predictions = np.where(new_scores >= (max_score - range_score if reranker is None else 1.5))[0]
         map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - 1.5)]
-        
-        rerank_scores = qwen_vllm.reranking(question, [doc_refers[i][2] for i in map_ids])
-        max_rerank_score = np.max(rerank_scores)
-        new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
-        map_ids = map_ids[new_predictions]
-        new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
+        new_scores = new_scores[new_scores >= (max_score - range_score if reranker is None else 1.5)]
+        if reranker is not None:
+            rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
+            max_rerank_score = np.max(rerank_scores)
+            new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
+            map_ids = map_ids[new_predictions]
+            new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
         # if new_scores.shape[0] > 5:
         #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
         #     map_ids = map_ids[predictions_2]
@@ -163,6 +163,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw_data", default="ALQAC_2025_data", type=str)
     parser.add_argument("--saved_model", default="saved_model", type=str)
+    parser.add_argument("--reranker", default="", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
@@ -188,6 +189,16 @@ if __name__ == "__main__":
         print(model)
     wseg = [("wseg" in name) for name in model_names]
     print("Number of pretrained models: ", len(models))
+    
+    reranker_name = args.reranker if hasattr(args, 'reranker') else None
+    if reranker_name:
+        reranker, tokenizer, others = create_reranker(reranker_name)
+        print(f"Using reranker: {reranker_name}")
+    else:
+        reranker = None
+        tokenizer = None
+        others = None
+        print("No reranker specified, using default settings.")
 
     # load question from json file
     question_items = load_question_json(args.raw_data)

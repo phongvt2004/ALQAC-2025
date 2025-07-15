@@ -51,8 +51,8 @@ def create_reranker(model_name: str = "Qwen/Qwen3-Reranker-0.6B"):
 
 @torch.no_grad()
 def reranking(
-    tokenizer,
     model,
+    tokenizer,
     query: str,
     documents: List[str],
     others:Dict[str, any]
