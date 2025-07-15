@@ -134,7 +134,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
     k = num_eval
-    for idx, item in enumerate(data):
+    for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         if question_id not in eval_qid:
             continue
