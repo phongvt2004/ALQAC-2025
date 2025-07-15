@@ -66,10 +66,12 @@ def reranking(
     Returns:
         List[float]: A list of scores.
     """
+    scores = []
     if "Qwen" not in others["model_name"]:
         pairs = [[query, doc] for doc in documents]
-        inputs = tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=MAX_LENGTH)
-        scores = model(**inputs, return_dict=True).logits.view(-1, ).float()
+        max_length = others['max_length']
+        inputs = tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=max_length)
+        scores = model(**inputs, return_dict=True).logits.view(-1, ).float().tolist()
     else:
         task = others['task']
         max_length = others['max_length']
@@ -79,5 +81,5 @@ def reranking(
         token_false_id = others['token_false_id']
         pairs = [format_instruction(task, query, doc) for doc in documents]
         inputs = process_inputs(pairs, model, tokenizer, max_length, prefix_tokens, suffix_tokens)
-        scores = compute_logits(model, inputs, token_true_id, token_false_id,)
+        scores = compute_logits(model, inputs, token_true_id, token_false_id)
     return scores
