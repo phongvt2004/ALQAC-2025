@@ -78,6 +78,6 @@ def reranking(
         token_true_id = others['token_true_id']
         token_false_id = others['token_false_id']
         pairs = [format_instruction(task, query, doc) for doc in documents]
-        inputs = process_inputs(pairs, tokenizer, max_length, prefix_tokens, suffix_tokens)
+        inputs = process_inputs(pairs, model, tokenizer, max_length, prefix_tokens, suffix_tokens)
         scores = compute_logits(model, inputs, token_true_id, token_false_id,)
     return scores

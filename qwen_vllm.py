@@ -8,7 +8,7 @@ def format_instruction(instruction, query, doc):
     output = "<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}".format(instruction=instruction,query=query, doc=doc)
     return output
 
-def process_inputs(pairs, tokenizer, max_length, prefix_tokens, suffix_tokens):
+def process_inputs(pairs, model, tokenizer, max_length, prefix_tokens, suffix_tokens):
     inputs = tokenizer(
         pairs, padding=False, truncation='longest_first',
         return_attention_mask=False, max_length=max_length - len(prefix_tokens) - len(suffix_tokens)
