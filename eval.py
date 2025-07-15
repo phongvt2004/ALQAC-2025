@@ -22,10 +22,10 @@ import csv
 
 load_dotenv()
 
-range_scores_list = [0.0, 2.0, 4.0]
+range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
 fixed_scores_list = [5, 10, 15]
-model_1_weights = [0.5]
-model_2_weights = [0.5]
+model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
 combine_types = ["default", "weighted_sum", "rrf"]
 alphas = [0.3, 0.5, 0.7]
 
@@ -149,6 +149,10 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             tokenized_query = bm25_tokenizer(question)
             doc_scores = bm25.get_scores(tokenized_query)
             new_scores = combine_scores(cos_sim, doc_scores, combine_type=args.combine_type, alpha=args.alpha)
+            if args.combine_type == "rrf":
+                fixed_scores = 2/61*fixed_scores/20
+            elif args.combine_type == "weighted_sum":
+                fixed_scores = fixed_scores / 10
         else:
             new_scores = cos_sim
         
@@ -161,11 +165,11 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if len(map_ids) > 30:
-                num_chunks = len(map_ids) // 30 + 1
+            if len(map_ids) > 15:
+                num_chunks = len(map_ids) // 15 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 30: (i + 1) * 30]
+                    chunk_ids = map_ids[i * 15: (i + 1) * 15]
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
             else:
                 rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
@@ -218,10 +222,6 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
         args.fixed_score = fixed_score
         args.combine_type = combine_type
         args.alpha = alpha
-        print(f"Running combination {idx + 1}/{len(search_space)}: "
-              f"range_score={range_score}, fixed_score={fixed_score}, "
-              f"model_1_weight={w1}, model_2_weight={w2}, "
-              f"combine_type={combine_type}, alpha={alpha}")
 
         avg_f2, avg_precision, avg_recall = evaluation(
             args,
