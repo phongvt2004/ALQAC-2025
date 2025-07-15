@@ -41,7 +41,7 @@ def create_reranker(model_name: str = "Qwen/Qwen3-Reranker-0.6B"):
         MAX_LENGTH = 2304
         
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map="auto")
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
         model.eval()
         others = {
             'max_length': MAX_LENGTH,
