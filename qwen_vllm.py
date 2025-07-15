@@ -2,29 +2,13 @@
 import torch
 from transformers import AutoModel, AutoTokenizer, AutoModelForCausalLM
 from typing import List
-
-tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-Reranker-0.6B", padding_side='left')
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-Reranker-0.6B").eval()
-# We recommend enabling flash_attention_2 for better acceleration and memory saving.
-# model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-Reranker-0.6B", torch_dtype=torch.float16, attn_implementation="flash_attention_2").cuda().eval()
-token_false_id = tokenizer.convert_tokens_to_ids("no")
-token_true_id = tokenizer.convert_tokens_to_ids("yes")
-max_length = 8192
-
-prefix = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
-suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-prefix_tokens = tokenizer.encode(prefix, add_special_tokens=False)
-suffix_tokens = tokenizer.encode(suffix, add_special_tokens=False)
-
-task = 'Given a legal query, retrieve relevant laws that answer the query'
-
 def format_instruction(instruction, query, doc):
     if instruction is None:
         instruction = 'Given a web search query, retrieve relevant passages that answer the query'
     output = "<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}".format(instruction=instruction,query=query, doc=doc)
     return output
 
-def process_inputs(pairs):
+def process_inputs(pairs, tokenizer, max_length, prefix_tokens, suffix_tokens):
     inputs = tokenizer(
         pairs, padding=False, truncation='longest_first',
         return_attention_mask=False, max_length=max_length - len(prefix_tokens) - len(suffix_tokens)
@@ -37,31 +21,11 @@ def process_inputs(pairs):
     return inputs
 
 @torch.no_grad()
-def compute_logits(inputs, **kwargs):
+def compute_logits(model, inputs, token_true_id, token_false_id, **kwargs):
     batch_scores = model(**inputs).logits[:, -1, :]
     true_vector = batch_scores[:, token_true_id]
     false_vector = batch_scores[:, token_false_id]
     batch_scores = torch.stack([false_vector, true_vector], dim=1)
     batch_scores = torch.nn.functional.log_softmax(batch_scores, dim=1)
     scores = batch_scores[:, 1].exp().tolist()
-    return scores
-
-
-def reranking(
-    query: str,
-    documents: List[str]
-) -> List[float]:
-    """
-    Rerank documents based on a query using a pre-trained model.
-    
-    Args:
-        query (str): The search query.
-        documents (List[str]): List of documents to be reranked.
-    Returns:
-        List[float]: A list of scores.
-    """
-    
-    pairs = [format_instruction(task, query, doc) for doc in documents]
-    inputs = process_inputs(pairs)
-    scores = compute_logits(inputs)
     return scores

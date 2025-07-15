@@ -179,8 +179,8 @@ if __name__ == "__main__":
 
     # define path to model
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "Qwen/Qwen3-Embedding-0.6B"]
-    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
+    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
