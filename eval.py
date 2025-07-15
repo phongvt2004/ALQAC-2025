@@ -29,7 +29,7 @@ load_dotenv()
 # combine_types = ["default", "weighted_sum", "rrf"]
 # alphas = [0.3, 0.5, 0.7]
 
-range_scores_list = [1.0]
+range_scores_list = [1.0, 5.0]
 fixed_scores_list = [10]
 model_1_weights = [0.5]
 model_2_weights = [0.5]
