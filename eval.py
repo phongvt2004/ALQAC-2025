@@ -222,7 +222,7 @@ if __name__ == "__main__":
     question_embs = encode_question(question_items, models, wseg)
 
     # define top n for compare and range of score
-    top_n = 1000
+    top_n = 2000
     range_score = args.range_score
 
     pred_list = []
@@ -258,8 +258,8 @@ if __name__ == "__main__":
                 best_recall = avg_recall
                 best_score_recall = i
         avg_f2 = best_f2
-        avg_precision = best_precision
-        avg_recall = best_recall
+        avg_precision = best_f2_precision
+        avg_recall = best_f2_recall
         print(f"Best F2 score: {best_score_f2}, Best F2: {best_f2}")
         print(f"Best Precision score: {best_score_precision}, Best Precision: {best_precision}")
         print(f"Best Recall score: {best_score_recall}, Best Recall: {best_recall}")
