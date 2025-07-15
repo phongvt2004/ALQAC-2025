@@ -1,70 +1,51 @@
-# Requires vllm>=0.8.5
-import logging
-from typing import Dict, Optional, List
-
-import json
-import logging
-
+# Requires transformers>=4.51.0
 import torch
+from transformers import AutoModel, AutoTokenizer, AutoModelForCausalLM
+from typing import List
 
-from transformers import AutoTokenizer, is_torch_npu_available
-from vllm import LLM, SamplingParams
-from vllm.distributed.parallel_state import destroy_model_parallel
-import gc
-import math
-from vllm.inputs.data import TokensPrompt
+tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-Reranker-0.6B", padding_side='left')
+model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-Reranker-0.6B").eval()
+# We recommend enabling flash_attention_2 for better acceleration and memory saving.
+# model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-Reranker-0.6B", torch_dtype=torch.float16, attn_implementation="flash_attention_2").cuda().eval()
+token_false_id = tokenizer.convert_tokens_to_ids("no")
+token_true_id = tokenizer.convert_tokens_to_ids("yes")
+max_length = 8192
 
-tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-Reranker-0.6B')
-model = LLM(model='Qwen/Qwen3-Reranker-0.6B', max_model_len=10000, enable_prefix_caching=True, gpu_memory_utilization=0.8, dtype="float32")
-tokenizer.padding_side = "left"
-tokenizer.pad_token = tokenizer.eos_token
+prefix = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
 suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-max_length=8192
+prefix_tokens = tokenizer.encode(prefix, add_special_tokens=False)
 suffix_tokens = tokenizer.encode(suffix, add_special_tokens=False)
-true_token = tokenizer("yes", add_special_tokens=False).input_ids[0]
-false_token = tokenizer("no", add_special_tokens=False).input_ids[0]
+
 task = 'Given a legal query, retrieve relevant laws that answer the query'
-sampling_params = SamplingParams(temperature=0, 
-    max_tokens=1,
-    logprobs=20, 
-    allowed_token_ids=[true_token, false_token],
-)
 
 def format_instruction(instruction, query, doc):
-    text = [
-        {"role": "system", "content": "Judge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\"."},
-        {"role": "user", "content": f"<Instruct>: {instruction}\n\n<Query>: {query}\n\n<Document>: {doc}"}
-    ]
-    return text
+    if instruction is None:
+        instruction = 'Given a web search query, retrieve relevant passages that answer the query'
+    output = "<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {doc}".format(instruction=instruction,query=query, doc=doc)
+    return output
 
-def process_inputs(pairs, instruction, max_length, suffix_tokens):
-    messages = [format_instruction(instruction, query, doc) for query, doc in pairs]
-    messages =  tokenizer.apply_chat_template(
-        messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
+def process_inputs(pairs):
+    inputs = tokenizer(
+        pairs, padding=False, truncation='longest_first',
+        return_attention_mask=False, max_length=max_length - len(prefix_tokens) - len(suffix_tokens)
     )
-    messages = [ele[:max_length] + suffix_tokens for ele in messages]
-    messages = [TokensPrompt(prompt_token_ids=ele) for ele in messages]
-    return messages
+    for i, ele in enumerate(inputs['input_ids']):
+        inputs['input_ids'][i] = prefix_tokens + ele + suffix_tokens
+    inputs = tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=max_length)
+    for key in inputs:
+        inputs[key] = inputs[key].to(model.device)
+    return inputs
 
-def compute_logits(model, messages, sampling_params, true_token, false_token):
-    outputs = model.generate(messages, sampling_params, use_tqdm=False)
-    scores = []
-    for i in range(len(outputs)):
-        final_logits = outputs[i].outputs[0].logprobs[-1]
-        token_count = len(outputs[i].outputs[0].token_ids)
-        if true_token not in final_logits:
-            true_logit = -10
-        else:
-            true_logit = final_logits[true_token].logprob
-        if false_token not in final_logits:
-            false_logit = -10
-        else:
-            false_logit = final_logits[false_token].logprob
-        true_score = math.exp(true_logit)
-        false_score = math.exp(false_logit)
-        score = true_score / (true_score + false_score)
-        scores.append(score)
+@torch.no_grad()
+def compute_logits(inputs, **kwargs):
+    batch_scores = model(**inputs).logits[:, -1, :]
+    true_vector = batch_scores[:, token_true_id]
+    false_vector = batch_scores[:, token_false_id]
+    batch_scores = torch.stack([false_vector, true_vector], dim=1)
+    batch_scores = torch.nn.functional.log_softmax(batch_scores, dim=1)
+    scores = batch_scores[:, 1].exp().tolist()
     return scores
+
 
 def reranking(
     query: str,
@@ -77,14 +58,10 @@ def reranking(
         query (str): The search query.
         documents (List[str]): List of documents to be reranked.
     Returns:
-        List[float]: A lisr of scores.
+        List[float]: A list of scores.
     """
     
-    
-    pairs = list(zip([query] * len(documents), documents))
-    inputs = process_inputs(pairs, task, max_length-len(suffix_tokens), suffix_tokens)
-    scores = compute_logits(model, inputs, sampling_params, true_token, false_token)
+    pairs = [format_instruction(task, query, doc) for doc in documents]
+    inputs = process_inputs(pairs)
+    scores = compute_logits(inputs)
     return scores
-
-def release_model():
-    destroy_model_parallel()
