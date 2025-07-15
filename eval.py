@@ -234,8 +234,12 @@ if __name__ == "__main__":
         else:
             min_score = 0.0
             max_score = 0.5
-        best_score = 0.0
+        best_score_f2 = 0.0
+        best_score_precision = 0.0
+        best_score_recall = 0.0
         best_f2 = 0.0
+        best_f2_precision = 0.0
+        best_f2_recall = 0.0
         best_precision = 0.0
         best_recall = 0.0
         for i in np.arange(min_score, max_score, args.step):
@@ -244,13 +248,21 @@ if __name__ == "__main__":
             # print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
+                best_f2_precision = avg_precision
+                best_f2_recall = avg_recall
+                best_score_f2 = i
+            if best_precision < avg_precision:
                 best_precision = avg_precision
+                best_score_precision = i
+            if best_recall < avg_recall:
                 best_recall = avg_recall
-                best_score = i
+                best_score_recall = i
         avg_f2 = best_f2
         avg_precision = best_precision
         avg_recall = best_recall
-        print(f"Best score: {best_score}, Best F2: {best_f2}, Best Precision: {best_precision}, Best Recall: {best_recall}")
+        print(f"Best F2 score: {best_score_f2}, Best F2: {best_f2}")
+        print(f"Best Precision score: {best_score_precision}, Best Precision: {best_precision}")
+        print(f"Best Recall score: {best_score_recall}, Best Recall: {best_recall}")
     else:
         avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
     
