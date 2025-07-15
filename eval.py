@@ -126,6 +126,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_predictions = np.where(new_scores >= (max_score - range_score if reranker is None else 6))[0]
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - range_score if reranker is None else 6)]
+        print(len(map_ids))
         if reranker is not None:
             rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
             max_rerank_score = np.max(rerank_scores)
