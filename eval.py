@@ -81,7 +81,7 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score):
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker, tokenizer, others):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
@@ -185,8 +185,6 @@ if __name__ == "__main__":
 
     print("Start loading model.")
     models = [SentenceTransformer(name) for name in model_names]
-    for model in models:
-        print(model)
     wseg = [("wseg" in name) for name in model_names]
     print("Number of pretrained models: ", len(models))
     
@@ -244,7 +242,7 @@ if __name__ == "__main__":
         best_recall = 0.0
         for i in np.arange(min_score, max_score, args.step):
             range_score = i
-            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score)
+            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker, tokenizer, others)
             # print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
             if best_f2 < avg_f2:
                 best_f2 = avg_f2
@@ -264,7 +262,7 @@ if __name__ == "__main__":
         print(f"Best Precision score: {best_score_precision}, Best Precision: {best_precision}")
         print(f"Best Recall score: {best_score_recall}, Best Recall: {best_recall}")
     else:
-        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
+        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, reranker, tokenizer, others)
     
     print(f"Average F2: \t\t\t\t{avg_f2}")
     print(f"Average Precision: {avg_precision}")
