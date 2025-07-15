@@ -168,7 +168,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if "Qwen" in others["model_name"] and len(map_ids) > 15:
+            if len(map_ids) > 15:
                 num_chunks = len(map_ids) // 15 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
