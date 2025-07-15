@@ -22,19 +22,12 @@ import csv
 
 load_dotenv()
 
-# range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-# fixed_scores_list = [5, 10, 15]
-# model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
-# model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
-# combine_types = ["default", "weighted_sum", "rrf"]
-# alphas = [0.3, 0.5, 0.7]
-
-range_scores_list = [1.0, 5.0]
-fixed_scores_list = [10]
-model_1_weights = [0.5]
-model_2_weights = [0.5]
-combine_types = ["default"]
-alphas = [0.5]
+range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+fixed_scores_list = [5, 10, 15]
+model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+combine_types = ["default", "weighted_sum", "rrf"]
+alphas = [0.3, 0.5, 0.7]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -255,11 +248,11 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
         results.append(result_row)
 
         # Save intermediate results after each run
-        with open("grid_search_results.csv", "w", newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=result_row.keys())
-            if idx == 0:
-                writer.writeheader()
-            writer.writerows(results)
+    with open("grid_search_results.csv", "w", newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
+        writer.writeheader()  # <- Write header here
+        writer.writerows(results)
+
 
     print("Grid search complete. Results saved to grid_search_results.csv.")
     return results
