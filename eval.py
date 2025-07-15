@@ -94,7 +94,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
     k = num_eval
-    for idx, item in tqdm(enumerate(data)):
+    for idx, item in enumerate(data):
         question_id = item["question_id"]
         if question_id not in eval_qid:
             continue
@@ -127,7 +127,11 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else 6))]
         print(len(map_ids))
-        if reranker is not None:
+        if reranker is not None and len(map_ids) > 1:
+            # if "Qwen" in others["model_name"]:
+            #     first_chunk = map_ids[:len(map_ids) // 2]
+            #     second_chunk = map_ids[len(map_ids) // 2:]
+            #     pairs = [format_instruction(others['task'], question, doc_refers[i][2]) for i in fi]
             rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
             max_rerank_score = np.max(rerank_scores)
             new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
