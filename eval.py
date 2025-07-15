@@ -81,6 +81,21 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
+def combine_scores(dense_scores, bm25_scores, alpha=0.5):
+    """
+    Combine dense scores and BM25 scores using a weighted sum.
+    
+    Args:
+        dense_scores (np.ndarray): Dense model scores.
+        bm25_scores (np.ndarray): BM25 model scores.
+        alpha (float): Weight for the dense scores.
+    
+    Returns:
+        np.ndarray: Combined scores.
+    """
+    import sklearn.
+    return alpha * dense_scores + (1 - alpha) * bm25_scores
+
 def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker, tokenizer, others):
     total_f2 = 0
     total_precision = 0
@@ -123,9 +138,9 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         new_scores = new_scores[predictions]
         
-        new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else 6)))[0]
+        new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else 10)))[0]
         map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else 6))]
+        new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else 10))]
         print(len(map_ids))
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
