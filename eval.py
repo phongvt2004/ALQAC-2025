@@ -22,12 +22,19 @@ import csv
 
 load_dotenv()
 
-range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-fixed_scores_list = [5, 10, 15]
-model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
-model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
-combine_types = ["default", "weighted_sum", "rrf"]
-alphas = [0.3, 0.5, 0.7]
+# range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+# fixed_scores_list = [5, 10, 15]
+# model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+# model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+# combine_types = ["default", "weighted_sum", "rrf"]
+# alphas = [0.3, 0.5, 0.7]
+
+range_scores_list = [1.0]
+fixed_scores_list = [10]
+model_1_weights = [0.5]
+model_2_weights = [0.5]
+combine_types = ["default"]
+alphas = [0.5]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -212,7 +219,6 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     for idx, (range_score, fixed_score, w1, w2, combine_type, alpha) in tqdm(enumerate(search_space), total=len(search_space)):
         if w1 + w2 != 1.0:
             continue  # Skip combinations where weights do not sum to 1.0
-        print(f"Combination {idx + 1}/{len(search_space)}:")
         args.model_1_weight = w1
         args.model_2_weight = w2
         args.range_score = range_score
