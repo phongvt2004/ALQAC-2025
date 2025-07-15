@@ -17,9 +17,17 @@ from scipy.stats import zscore
 from sklearn.preprocessing import MinMaxScaler
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from reranker import create_reranker, reranking
-
+import itertools
+import csv
 
 load_dotenv()
+
+range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+fixed_scores_list = [5, 10, 15]
+model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
+combine_types = ["default", "weighted_sum", "rrf"]
+alphas = [0.3, 0.5, 0.7]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -81,7 +89,7 @@ def load_question_json(data_path):
     question_data = json.load(open(os.path.join(data_path, "queries.json")))
     return question_data
 
-def combine_scores(dense_scores, bm25_scores, alpha=0.5):
+def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.5, k = 60):
     """
     Combine dense scores and BM25 scores using a weighted sum.
     
@@ -93,10 +101,20 @@ def combine_scores(dense_scores, bm25_scores, alpha=0.5):
     Returns:
         np.ndarray: Combined scores.
     """
-    import sklearn.
-    return alpha * dense_scores + (1 - alpha) * bm25_scores
+    if combine_type == "default":
+        return bm25_scores * dense_scores
+    elif combine_type == "weighted_sum":
+        from sklearn.preprocessing import normalize
+        bm25_scores = normalize(bm25_scores.reshape(1, -1), norm='l1').flatten()
+        return alpha * dense_scores + (1 - alpha) * bm25_scores
+    elif combine_type == "rrf":
+        dense_ranks = dense_scores.argsort().argsort() + 1
+        bm25_ranks = bm25_scores.argsort().argsort() + 1
+        rrf_scores = 1 / (dense_ranks + k) + 1 / (bm25_ranks + k)
+        return rrf_scores
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker, tokenizer, others):
+
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
@@ -130,7 +148,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         if args.hybrid:
             tokenized_query = bm25_tokenizer(question)
             doc_scores = bm25.get_scores(tokenized_query)
-            new_scores = doc_scores * cos_sim
+            new_scores = combine_scores(cos_sim, doc_scores, combine_type=args.combine_type, alpha=args.alpha)
         else:
             new_scores = cos_sim
         
@@ -138,10 +156,9 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
         new_scores = new_scores[predictions]
         
-        new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else 10)))[0]
+        new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else fixed_scores)))[0]
         map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else 10))]
-        print(len(map_ids))
+        new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
             if "Qwen" in others["model_name"] and len(map_ids) > 15:
@@ -156,9 +173,6 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
             map_ids = map_ids[new_predictions]
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
-        # if new_scores.shape[0] > 5:
-        #     predictions_2 = np.argpartition(new_scores, len(new_scores) - 5)[-5:]
-        #     map_ids = map_ids[predictions_2]
         true_positive = 0
         false_positive = 0
         
@@ -181,6 +195,68 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     avg_precision = total_precision / k
     avg_recall = total_recall / k
     return avg_f2, avg_precision, avg_recall
+
+def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
+    # Prepare result logging
+    results = []
+    search_space = list(itertools.product(
+        range_scores_list,
+        fixed_scores_list,
+        model_1_weights,
+        model_2_weights,
+        combine_types,
+        alphas
+    ))
+
+    print(f"Total combinations: {len(search_space)}")
+    for idx, (range_score, fixed_score, w1, w2, combine_type, alpha) in tqdm(enumerate(search_space), total=len(search_space)):
+        if w1 + w2 != 1.0:
+            continue  # Skip combinations where weights do not sum to 1.0
+        print(f"Combination {idx + 1}/{len(search_space)}:")
+        args.model_1_weight = w1
+        args.model_2_weight = w2
+        args.range_score = range_score
+        args.fixed_score = fixed_score
+        args.combine_type = combine_type
+        args.alpha = alpha
+
+        avg_f2, avg_precision, avg_recall = evaluation(
+            args,
+            data,
+            models,
+            emb_legal_data,
+            bm25,
+            doc_refers,
+            question_embs,
+            range_score,
+            fixed_score,
+            reranker,
+            tokenizer,
+            others
+        )
+
+        result_row = {
+            "range_score": range_score,
+            "fixed_score": fixed_score,
+            "model_1_weight": w1,
+            "model_2_weight": w2,
+            "combine_type": combine_type,
+            "alpha": alpha,
+            "avg_f2": avg_f2,
+            "avg_precision": avg_precision,
+            "avg_recall": avg_recall
+        }
+        results.append(result_row)
+
+        # Save intermediate results after each run
+        with open("grid_search_results.csv", "w", newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=result_row.keys())
+            if idx == 0:
+                writer.writeheader()
+            writer.writerows(results)
+
+    print("Grid search complete. Results saved to grid_search_results.csv.")
+    return results
 
 if __name__ == "__main__":
 
@@ -250,44 +326,10 @@ if __name__ == "__main__":
     pred_list = []
     if args.find_best_score:
         print("Start finding best score.")
-        if args.hybrid:
-            min_score = 1.0
-            max_score = 6.0
-        else:
-            min_score = 0.0
-            max_score = 1.0
-        best_score_f2 = 0.0
-        best_score_precision = 0.0
-        best_score_recall = 0.0
-        best_f2 = 0.0
-        best_f2_precision = 0.0
-        best_f2_recall = 0.0
-        best_precision = 0.0
-        best_recall = 0.0
-        for i in np.arange(min_score, max_score, args.step):
-            range_score = i
-            avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, reranker, tokenizer, others)
-            # print(f"Score: {i}, F2: {avg_f2}, Precision: {avg_precision}, Recall: {avg_recall}")
-            if best_f2 < avg_f2:
-                best_f2 = avg_f2
-                best_f2_precision = avg_precision
-                best_f2_recall = avg_recall
-                best_score_f2 = i
-            if best_precision < avg_precision:
-                best_precision = avg_precision
-                best_score_precision = i
-            if best_recall < avg_recall:
-                best_recall = avg_recall
-                best_score_recall = i
-        avg_f2 = best_f2
-        avg_precision = best_f2_precision
-        avg_recall = best_f2_recall
-        print(f"Best F2 score: {best_score_f2}, Best F2: {best_f2}")
-        print(f"Best Precision score: {best_score_precision}, Best Precision: {best_precision}")
-        print(f"Best Recall score: {best_score_recall}, Best Recall: {best_recall}")
+        results = grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
     else:
-        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, reranker, tokenizer, others)
+        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
     
-    print(f"Average F2: \t\t\t\t{avg_f2}")
-    print(f"Average Precision: {avg_precision}")
-    print(f"Average Recall: {avg_recall}\n")
+        print(f"Average F2: \t\t\t\t{avg_f2}")
+        print(f"Average Precision: {avg_precision}")
+        print(f"Average Recall: {avg_recall}\n")
