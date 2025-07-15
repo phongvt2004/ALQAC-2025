@@ -41,7 +41,7 @@ def create_reranker(model_name: str = "Qwen/Qwen3-Reranker-0.6B"):
         MAX_LENGTH = 2304
         
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map="auto")
         model.eval()
         others = {
             'max_length': MAX_LENGTH,
@@ -71,6 +71,8 @@ def reranking(
         pairs = [[query, doc] for doc in documents]
         max_length = others['max_length']
         inputs = tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=max_length)
+        for key in inputs:
+            inputs[key] = inputs[key].to(model.device)
         scores = model(**inputs, return_dict=True).logits.view(-1, ).float().tolist()
     else:
         task = others['task']
