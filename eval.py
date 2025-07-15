@@ -128,11 +128,15 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else 6))]
         print(len(map_ids))
         if reranker is not None and len(map_ids) > 1:
-            # if "Qwen" in others["model_name"]:
-            #     first_chunk = map_ids[:len(map_ids) // 2]
-            #     second_chunk = map_ids[len(map_ids) // 2:]
-            #     pairs = [format_instruction(others['task'], question, doc_refers[i][2]) for i in fi]
-            rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
+            rerank_scores = []
+            if "Qwen" in others["model_name"] and len(map_ids) > 15:
+                num_chunks = len(map_ids) // 15 + 1
+                rerank_scores = []
+                for i in range(num_chunks):
+                    chunk_ids = map_ids[i * 15: (i + 1) * 15]
+                    rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
+            else:
+                rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
             max_rerank_score = np.max(rerank_scores)
             new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
             map_ids = map_ids[new_predictions]
