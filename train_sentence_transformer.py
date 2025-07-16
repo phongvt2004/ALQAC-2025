@@ -64,7 +64,63 @@ if __name__ == '__main__':
     print(f"There are {len(save_pairs)} pair sentences.")
     train_examples = {"question": [], "document": [], "label": []}
     eval_examples = {"question": [], "document": [], "label": []}
+    loss = ContrastiveLoss(model)
+
+    output_path = args.saved_model
+    os.makedirs(output_path, exist_ok=True)
+    if args.eval_size <= 0.0:
+        for idx, pair in enumerate(save_pairs):
+            relevant = float(pair["relevant"])
+            qid = pair["qid"]
+            question = pair["question"]
+            document = pair["document"]
+            if args.wseg:
+                question = utils.word_segmentation(question)
+                document = utils.word_segmentation(document)
+            train_examples["question"].append(question)
+            train_examples["document"].append(document)
+            train_examples["label"].append(relevant)
+        train_dataset = Dataset.from_dict(train_examples)
+        loss = ContrastiveLoss(model)
+        hub_model_id = args.hub_model_id
     
+        login(token=os.getenv("HUGGINGFACE_TOKEN"))
+        wandb.login(key=os.getenv("WANDB_API_KEY"))
+        wandb.init(project="ALQAC-2025", name=hub_model_id+"_run")
+        args = SentenceTransformerTrainingArguments(
+            # Required parameter:
+            output_dir=output_path,
+            # Optional training parameters:
+            num_train_epochs=args.epochs,
+            per_device_train_batch_size=args.batch_size,
+            per_device_eval_batch_size=args.batch_size*2,
+            gradient_accumulation_steps=10,
+            gradient_checkpointing=True,
+            learning_rate=args.lr,
+            warmup_ratio=0.1,
+            fp16=True,  # Set to False if you get an error that your GPU can't run on FP16
+            bf16=False,  # Set to True if you have a GPU that supports BF16
+            # batch_sampler=BatchSamplers.GROUP_BY_LABEL,  # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
+            # Optional tracking/debugging parameters:
+            save_strategy="steps",
+            save_steps=args.step*4,
+            logging_steps=args.step,
+            prompts={"query": model.prompts["query"]} if "Qwen" in args.pretrained_model else None,
+            run_name=args.pretrained_model+"_run",  # Will be used in W&B if `wandb` is installed
+            push_to_hub=True if hub_model_id else False,
+            hub_model_id=hub_model_id if hub_model_id else None,
+        )
+        trainer = SentenceTransformerTrainer(
+            model=model,
+            args=args,
+            train_dataset=train_dataset,
+            loss=loss,
+        )
+        trainer.train()
+        wandb.finish()
+        logging.info("Training finished!")
+        
+        print(f"Model saved to {output_path}")
     if not args.zalo:
         with open(os.path.join(args.data_path, "queries.json"), "r") as f:
             queries = json.load(f)
@@ -126,10 +182,7 @@ if __name__ == '__main__':
     with open(os.path.join(args.data_path, "relevant_docs.json"), "rb") as f:
         relevant_docs = pickle.load(f)
     
-    loss = ContrastiveLoss(model)
-
-    output_path = args.saved_model
-    os.makedirs(output_path, exist_ok=True)
+    
 
     eval_questions = list(eval_dataset["question"])
     eval_documents = list(eval_dataset["document"])
