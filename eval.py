@@ -263,7 +263,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             "range_score": range_score,
                             "fixed_score": fixed_score,
                             "combine_type": combine_type,
-                            "alpha": alpha,
+                            "alpha": 0,
                             "avg_f2": avg_f2,
                             "avg_precision": avg_precision,
                             "avg_recall": avg_recall
