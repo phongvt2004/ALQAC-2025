@@ -21,7 +21,7 @@ import itertools
 import csv
 
 load_dotenv()
-combine_types = ["default", "weighted_sum", "rrf"]
+combine_types = ["rrf"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
