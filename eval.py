@@ -161,7 +161,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else fixed_scores)))[0]
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
-        print("Number: ", len(map_ids))
+        # print("Number: ", len(map_ids))
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
             if len(map_ids) > 100:
@@ -208,7 +208,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     fixed_scores_list = {
         "default": [10, 15],
         "weighted_sum": [0.01, 0.05, 0.08],
-        "rrf": [0.01, 0.005, 0.01]
+        "rrf": [0.001, 0.005, 0.01]
     }
     alphas = [0.3, 0.5, 0.7]
     for combine_type in tqdm(combine_types):
