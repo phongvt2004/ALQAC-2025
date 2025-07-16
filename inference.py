@@ -21,7 +21,13 @@ import itertools
 import csv
 
 load_dotenv()
+
+range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+fixed_scores_list = [10, 15]
+model_1_weights = [0.5]
+model_2_weights = [0.5]
 combine_types = ["default", "weighted_sum", "rrf"]
+alphas = [0.3, 0.5, 0.7]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -108,26 +114,11 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         return rrf_scores
 
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
-    total_f2 = 0
-    total_precision = 0
-    total_recall = 0
-    
-    with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
-        queries = json.load(f)
-    qid_list = list(queries.keys())
-    random.seed(42)
-    random.shuffle(qid_list)
-    num_eval = int(len(qid_list) * args.eval_size)
-    eval_qid = qid_list[:num_eval]
-    k = num_eval
+def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
+    submission = []
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
-        if question_id not in eval_qid:
-            continue
         question = item["text"]
-        relevant_articles = item["relevant_articles"]
-        actual_positive = len(relevant_articles)
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         cos_sim = []
 
@@ -171,115 +162,21 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
             map_ids = map_ids[new_predictions]
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
-        true_positive = 0
-        false_positive = 0
         
+        answer = {
+            "question_id": question_id,
+            "relevant_articles": [],
+        }
         # post processing character error
         for idx, idx_pred in enumerate(map_ids):
             pred = doc_refers[idx_pred]
-            
-            for article in relevant_articles:
-                if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
-                    true_positive += 1
-                else:
-                    false_positive += 1
-        precision = true_positive/(true_positive + false_positive + 1e-20)
-        recall = true_positive/actual_positive
-        f2 = calculate_f2(precision, recall)
-        total_precision += precision
-        total_recall += recall
-        total_f2 += f2
-    avg_f2 = total_f2 / k
-    avg_precision = total_precision / k
-    avg_recall = total_recall / k
-    return avg_f2, avg_precision, avg_recall
-
-def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
-    # Prepare result logging
-    results = []
-    range_scores_list = [0.0, 2.0, 4.0]
-    fixed_scores_list = {
-        "default": [10, 15],
-        "weighted_sum": [0.25, 0.5, 0.75],
-        "rrf": [0.01, 0.02, 0.03]
-    }
-    alphas = [0.3, 0.5, 0.7]
-    for combine_type in tqdm(combine_types):
-        for range_score in tqdm(range_scores_list, desc=f"Processing range_score={range_score}, combine_type={combine_type}"):
-            try:
-                args.model_1_weight = 0.5
-                args.model_2_weight = 0.5
-                args.range_score = range_score
-                args.combine_type = combine_type
-                args.alpha = 0
-                if combine_type == "weighted_sum":
-                    for fixed_score in fixed_scores_list[combine_type]:
-                        for alpha in alphas:
-                            args.alpha = alpha
-                            avg_f2, avg_precision, avg_recall = evaluation(
-                                args,
-                                data,
-                                models,
-                                emb_legal_data,
-                                bm25,
-                                doc_refers,
-                                question_embs,
-                                range_score,
-                                fixed_score,
-                                reranker,
-                                tokenizer,
-                                others
-                            )
-                            result_row = {
-                                "range_score": range_score,
-                                "fixed_score": fixed_score,
-                                "combine_type": combine_type,
-                                "alpha": alpha,
-                                "avg_f2": avg_f2,
-                                "avg_precision": avg_precision,
-                                "avg_recall": avg_recall
-                            }
-                            results.append(result_row)
-                else:
-                    for fixed_score in fixed_scores_list[combine_type]:
-                        avg_f2, avg_precision, avg_recall = evaluation(
-                            args,
-                            data,
-                            models,
-                            emb_legal_data,
-                            bm25,
-                            doc_refers,
-                            question_embs,
-                            range_score,
-                            fixed_score,
-                            reranker,
-                            tokenizer,
-                            others
-                        )
-
-                        result_row = {
-                            "range_score": range_score,
-                            "fixed_score": fixed_score,
-                            "combine_type": combine_type,
-                            "alpha": alpha,
-                            "avg_f2": avg_f2,
-                            "avg_precision": avg_precision,
-                            "avg_recall": avg_recall
-                        }
-                        results.append(result_row)
-            except Exception as e:
-                print(f"Error in combination: {e}")
-                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, model_1_weight={w1}, model_2_weight={w2}, combine_type={combine_type}, alpha={alpha}")
-
-        # Save intermediate results after each run
-    with open("grid_search_results.csv", "w", newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
-        writer.writeheader()  # <- Write header here
-        writer.writerows(results)
-
-
-    print("Grid search complete. Results saved to grid_search_results.csv.")
-    return results
+            answer["relevant_articles"].append({
+                "law_id": pred[0],
+                "article_id": pred[1],
+            })
+        submission.append(answer)
+    with open("submission.json", "w") as f:
+        json.dump(submission, f, indent=4)
 
 if __name__ == "__main__":
 
@@ -347,12 +244,4 @@ if __name__ == "__main__":
     range_score = args.range_score
 
     pred_list = []
-    if args.find_best_score:
-        print("Start finding best score.")
-        results = grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
-    else:
-        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
-    
-        print(f"Average F2: \t\t\t\t{avg_f2}")
-        print(f"Average Precision: {avg_precision}")
-        print(f"Average Recall: {avg_recall}\n")
+    inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
