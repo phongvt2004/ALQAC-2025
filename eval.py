@@ -351,7 +351,7 @@ if __name__ == "__main__":
         emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
     else:
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
-    if args.encode_queries_data:
+    if args.encode_question_data:
         question_embs = encode_question(question_items, models, wseg)
 
     else:
