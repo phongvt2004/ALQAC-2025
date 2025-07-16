@@ -21,7 +21,7 @@ import itertools
 import csv
 
 load_dotenv()
-combine_types = ["rrf"]
+combine_types = ["weighted_sum", "rrf"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -143,10 +143,6 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             tokenized_query = bm25_tokenizer(question)
             doc_scores = bm25.get_scores(tokenized_query)
             new_scores = combine_scores(cos_sim, doc_scores, combine_type=args.combine_type, alpha=args.alpha)
-            if args.combine_type == "rrf":
-                fixed_scores = 2/61*fixed_scores/20
-            elif args.combine_type == "weighted_sum":
-                fixed_scores = fixed_scores / 10
         else:
             new_scores = cos_sim
         
@@ -200,10 +196,11 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
 
 def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
     # Prepare result logging
-    results = []
     range_scores_list = [0.0, 2.0, 4.0]
     fixed_scores_list = {
-        "rrf": [0.1, 0.2, 0.3]
+        "default": [10, 15],
+        "weighted_sum": [0.25, 0.5, 0.75],
+        "rrf": [0.01, 0.02, 0.03]
     }
     alphas = [0.3, 0.5, 0.7]
     for combine_type in tqdm(combine_types):
