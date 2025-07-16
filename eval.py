@@ -107,7 +107,7 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         return bm25_scores * dense_scores
     elif combine_type == "weighted_sum":
         from sklearn.preprocessing import normalize
-        bm25_scores = normalize(bm25_scores.reshape(1, -1), norm='l1').flatten()
+        bm25_scores = normalize(bm25_scores.reshape(1, -1), norm='l2').flatten()
         return alpha * dense_scores + (1 - alpha) * bm25_scores
     elif combine_type == "rrf":
         dense_ranks = dense_scores.argsort().argsort() + 1
@@ -209,7 +209,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     range_scores_list = [0.0, 2.0, 4.0]
     fixed_scores_list = {
         "default": [10, 15],
-        "weighted_sum": [0.2, 0.3, 0.4],
+        "weighted_sum": [0.01, 0.05, 0.1],
         "rrf": [0.01, 0.02, 0.05]
     }
     alphas = [0.3, 0.5, 0.7]
