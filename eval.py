@@ -207,7 +207,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     }
     alphas = [0.3, 0.5, 0.7]
     for combine_type in tqdm(combine_types):
-        for range_score in tqdm(range_scores_list, desc=f"Processing range_score={range_score}, combine_type={combine_type}"):
+        for range_score in tqdm(range_scores_list, desc=f"Processing range_score"):
             try:
                 args.model_1_weight = 0.5
                 args.model_2_weight = 0.5
@@ -271,7 +271,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                         results.append(result_row)
             except Exception as e:
                 print(f"Error in combination: {e}")
-                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, model_1_weight={w1}, model_2_weight={w2}, combine_type={combine_type}, alpha={alpha}")
+                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}, alpha={alpha}")
 
         # Save intermediate results after each run
     with open("grid_search_results.csv", "w", newline='') as csvfile:
