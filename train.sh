@@ -1,4 +1,4 @@
-python eval.py --raw_data ALQAC_2025_data --find-best-score --hybrid --reranker Qwen/Qwen3-Embedding-4B
+python eval.py --raw_data ALQAC_2025_data --find-best-score --hybrid --reranker Qwen/Qwen3-Reranker-4B
 
 python train_sentence_transformer.py --pretrained_model AITeamVN/Vietnamese_Embedding_v2 \
 --step 200 --round 1 --saved_model sbert_saved_model --eval_size 0.0 \
