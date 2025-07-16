@@ -21,7 +21,7 @@ import itertools
 import csv
 
 load_dotenv()
-combine_types = ["rrf"]
+combine_types = ["weighted_sum", "rrf"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -199,7 +199,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     range_scores_list = [0.0, 2.0, 4.0]
     fixed_scores_list = {
         "default": [10, 15],
-        "weighted_sum": [0.25, 0.5, 0.75],
+        "weighted_sum": [0.2, 0.3, 0.4],
         "rrf": [0.01, 0.02, 0.05]
     }
     alphas = [0.3, 0.5, 0.7]
@@ -213,6 +213,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                 args.alpha = 0
                 if combine_type == "weighted_sum":
                     for fixed_score in fixed_scores_list[combine_type]:
+                        print(f"Evaluating with range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
                         for alpha in alphas:
                             args.alpha = alpha
                             avg_f2, avg_precision, avg_recall = evaluation(
@@ -241,6 +242,8 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             results.append(result_row)
                 else:
                     for fixed_score in fixed_scores_list[combine_type]:
+                        print(f"Evaluating with range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
+                        
                         avg_f2, avg_precision, avg_recall = evaluation(
                             args,
                             data,
