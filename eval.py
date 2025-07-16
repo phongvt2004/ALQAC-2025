@@ -214,42 +214,46 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
 
     print(f"Total combinations: {len(search_space)}")
     for idx, (range_score, fixed_score, w1, w2, combine_type, alpha) in tqdm(enumerate(search_space), total=len(search_space)):
-        if w1 + w2 != 1.0:
-            continue  # Skip combinations where weights do not sum to 1.0
-        args.model_1_weight = w1
-        args.model_2_weight = w2
-        args.range_score = range_score
-        args.fixed_score = fixed_score
-        args.combine_type = combine_type
-        args.alpha = alpha
+        try:
+            if w1 + w2 != 1.0:
+                continue  # Skip combinations where weights do not sum to 1.0
+            args.model_1_weight = w1
+            args.model_2_weight = w2
+            args.range_score = range_score
+            args.fixed_score = fixed_score
+            args.combine_type = combine_type
+            args.alpha = alpha
 
-        avg_f2, avg_precision, avg_recall = evaluation(
-            args,
-            data,
-            models,
-            emb_legal_data,
-            bm25,
-            doc_refers,
-            question_embs,
-            range_score,
-            fixed_score,
-            reranker,
-            tokenizer,
-            others
-        )
+            avg_f2, avg_precision, avg_recall = evaluation(
+                args,
+                data,
+                models,
+                emb_legal_data,
+                bm25,
+                doc_refers,
+                question_embs,
+                range_score,
+                fixed_score,
+                reranker,
+                tokenizer,
+                others
+            )
 
-        result_row = {
-            "range_score": range_score,
-            "fixed_score": fixed_score,
-            "model_1_weight": w1,
-            "model_2_weight": w2,
-            "combine_type": combine_type,
-            "alpha": alpha,
-            "avg_f2": avg_f2,
-            "avg_precision": avg_precision,
-            "avg_recall": avg_recall
-        }
-        results.append(result_row)
+            result_row = {
+                "range_score": range_score,
+                "fixed_score": fixed_score,
+                "model_1_weight": w1,
+                "model_2_weight": w2,
+                "combine_type": combine_type,
+                "alpha": alpha,
+                "avg_f2": avg_f2,
+                "avg_precision": avg_precision,
+                "avg_recall": avg_recall
+            }
+            results.append(result_row)
+        except Exception as e:
+            print(f"Error in combination {idx}: {e}")
+            print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, model_1_weight={w1}, model_2_weight={w2}, combine_type={combine_type}, alpha={alpha}")
 
         # Save intermediate results after each run
     with open("grid_search_results.csv", "w", newline='') as csvfile:
