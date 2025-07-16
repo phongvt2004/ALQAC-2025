@@ -271,7 +271,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                         results.append(result_row)
             except Exception as e:
                 print(f"Error in combination: {e}")
-                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}, alpha={alpha}")
+                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
 
         # Save intermediate results after each run
     with open("grid_search_results.csv", "w", newline='') as csvfile:
