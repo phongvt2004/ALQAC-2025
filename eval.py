@@ -21,7 +21,7 @@ import itertools
 import csv
 
 load_dotenv()
-combine_types = ["weighted_sum", "rrf"]
+combine_types = ["rrf", "weighted_sum"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -209,7 +209,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     range_scores_list = [0.0, 2.0, 4.0]
     fixed_scores_list = {
         "default": [10, 15],
-        "weighted_sum": [0.01, 0.05, 0.1],
+        "weighted_sum": [0.01, 0.05, 0.08],
         "rrf": [0.01, 0.02, 0.05]
     }
     alphas = [0.3, 0.5, 0.7]
