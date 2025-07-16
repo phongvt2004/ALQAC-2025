@@ -164,11 +164,11 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         # print("Number: ", len(map_ids))
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if len(map_ids) > 5:
-                num_chunks = len(map_ids) // 5 + 1
+            if len(map_ids) > 100:
+                num_chunks = len(map_ids) // 100 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 5: (i + 1) * 5]
+                    chunk_ids = map_ids[i * 100: (i + 1) * 100]
                     if len(chunk_ids) == 0:
                         continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
