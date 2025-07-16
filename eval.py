@@ -166,6 +166,8 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
                 rerank_scores = []
                 for i in range(num_chunks):
                     chunk_ids = map_ids[i * 15: (i + 1) * 15]
+                    if len(chunk_ids) == 0:
+                        continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
             else:
                 rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
