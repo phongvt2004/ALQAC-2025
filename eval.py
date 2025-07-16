@@ -319,10 +319,7 @@ if __name__ == "__main__":
     model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
     # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
 
-    print("Start loading model.")
-    models = [SentenceTransformer(name) for name in model_names]
-    wseg = [("wseg" in name) for name in model_names]
-    print("Number of pretrained models: ", len(models))
+    
     
     reranker_name = args.reranker if hasattr(args, 'reranker') else None
     if reranker_name:
@@ -352,8 +349,11 @@ if __name__ == "__main__":
     else:
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
     if args.encode_question_data:
+        print("Start loading model.")
+        models = [SentenceTransformer(name) for name in model_names]
+        wseg = [("wseg" in name) for name in model_names]
+        print("Number of pretrained models: ", len(models))
         question_embs = encode_question(question_items, models, wseg)
-
     else:
         question_embs = load_encoded_question_data("encoded_question_data.pkl")
     # define top n for compare and range of score
@@ -363,9 +363,9 @@ if __name__ == "__main__":
     pred_list = []
     if args.find_best_score:
         print("Start finding best score.")
-        results = grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs)
+        results = grid_search(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs)
     else:
-        avg_f2, avg_precision, avg_recall = evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
+        avg_f2, avg_precision, avg_recall = evaluation(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
     
         print(f"Average F2: \t\t\t\t{avg_f2}")
         print(f"Average Precision: {avg_precision}")
