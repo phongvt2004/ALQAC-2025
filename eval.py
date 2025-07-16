@@ -196,6 +196,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     return avg_f2, avg_precision, avg_recall
 
 def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
+    results = []
     # Prepare result logging
     range_scores_list = [0.0, 2.0, 4.0]
     fixed_scores_list = {
