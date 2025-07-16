@@ -55,6 +55,8 @@ def encode_question(question_data, models, wseg):
             emb_quest_dict[question_id] = model.encode(question, show_progress_bar=False)
         
         question_embs.append(emb_quest_dict)
+    with open("encoded_question_data.pkl", "wb") as f:
+        pickle.dump(question_embs, f)
     return question_embs
 
 def load_encoded_legal_corpus(legal_data_path):
@@ -62,6 +64,12 @@ def load_encoded_legal_corpus(legal_data_path):
     with open(legal_data_path, "rb") as f1:
         emb_legal_data = pickle.load(f1)
     return emb_legal_data
+
+def load_encoded_question_data(question_data_path):
+    print("Start loading question data.")
+    with open(question_data_path, "rb") as f2:
+        question_embs = pickle.load(f2)
+    return question_embs
 
 def load_bm25(bm25_path):
     with open(bm25_path, "rb") as bm_file:
@@ -299,6 +307,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_3_weight", default=0.0, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
+    parser.add_argument("--encode_question_data", action="store_true", help="for question data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
     parser.add_argument("--step", default=0.1, type=float, help="number of eval data")
@@ -342,10 +351,11 @@ if __name__ == "__main__":
         emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
     else:
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
+    if args.encode_queries_data:
+        question_embs = encode_question(question_items, models, wseg)
 
-    # encode question for query
-    question_embs = encode_question(question_items, models, wseg)
-
+    else:
+        question_embs = load_encoded_question_data("encoded_question_data.pkl")
     # define top n for compare and range of score
     top_n = 2000
     range_score = args.range_score
