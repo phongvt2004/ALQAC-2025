@@ -161,16 +161,16 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else fixed_scores)))[0]
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
-        print("Number: ", len(map_ids))
+        # print("Number: ", len(map_ids))
         if len(map_ids) == 0:
             print(args.combine_type, "No predictions for fixed_score:", fixed_scores)
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if len(map_ids) > 15:
-                num_chunks = len(map_ids) // 15 + 1
+            if len(map_ids) > 30:
+                num_chunks = len(map_ids) // 30 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 15: (i + 1) * 15]
+                    chunk_ids = map_ids[i * 30: (i + 1) * 30]
                     if len(chunk_ids) == 0:
                         continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
