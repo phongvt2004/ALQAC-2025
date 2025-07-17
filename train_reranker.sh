@@ -13,8 +13,8 @@ torchrun --nproc_per_node 2 \
     --overwrite_output_dir \
     --learning_rate 6e-5 \
     --fp16 \
-    --num_train_epochs 2 \
-    --per_device_train_batch_size 2 \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 8 \
     --gradient_accumulation_steps 1 \
     --dataloader_drop_last True \
     --warmup_ratio 0.1 \
