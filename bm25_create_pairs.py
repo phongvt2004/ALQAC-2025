@@ -17,6 +17,8 @@ if __name__ == '__main__':
     parser.add_argument("--data_path", default="ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_pair_path", default="pair_data/", type=str, help="path to save pair sentence directory")
     parser.add_argument("--saved_model_path", default="saved_model", type=str, help="path to saved model data")
+    parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
+    
     args = parser.parse_args()
 
     train_path = os.path.join(args.data_path, "alqac25_train.json" if not args.zalo else "zalo_question.json")
