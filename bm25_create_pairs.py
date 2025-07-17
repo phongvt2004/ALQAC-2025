@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import random
 import numpy as np
 from tqdm import tqdm
 from rank_bm25 import *
@@ -30,8 +31,17 @@ if __name__ == '__main__':
     save_pairs = []
     top_n = args.top_pair
     if args.rerank:
+        with open(os.path.join(args.data_path, "queries.json"), "r") as f:
+            queries = json.load(f)
+        qid_list = list(queries.keys())
+        random.seed(42)
+        random.shuffle(qid_list)
+        num_eval = int(len(qid_list) * args.eval_size)
+        eval_qid = qid_list[:num_eval]
         for idx, item in tqdm(enumerate(data)):
             question_id = item["question_id"] if not args.zalo else item["id"]
+            if question_id in eval_qid:
+                continue
             question = item["text"]
             relevant_articles = item["relevant_articles"]
             actual_positive = len(relevant_articles)
