@@ -1,4 +1,4 @@
-torchrun --nproc_per_node 2 \
+torchrun --nproc_per_node 1 \
 	-m FlagEmbedding.finetune.reranker.encoder_only.base \
 	--model_name_or_path AITeamVN/Vietnamese_Reranker \
     --cache_dir ./cache/model \
