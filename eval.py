@@ -207,7 +207,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     range_scores_list = [0.0, 1.0, 2.0]
     fixed_scores_list = {
         "default": [10, 15],
-        "weighted_sum": [0.08, 0.1],
+        "weighted_sum": [0.05, 0.08, 0.1],
         "rrf": [0.001, 0.005, 0.01]
     }
     alphas = [0.3, 0.5, 0.7]
