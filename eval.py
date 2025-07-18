@@ -189,11 +189,17 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             pred = doc_refers[idx_pred]
             saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
             saved["scores"].append(new_scores[idx])
+            # Check if this prediction matches any relevant article
+            is_match = False
             for article in relevant_articles:
                 if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
                     true_positive += 1
-                else:
-                    false_positive += 1
+                    is_match = True
+                    break  # Stop checking once we find a match
+            
+            # Only count as false positive if no match was found
+            if not is_match:
+                false_positive += 1
         saved["ground_truth"] = relevant_articles  
         results.append(saved)
         precision = true_positive/(true_positive + false_positive + 1e-20)
