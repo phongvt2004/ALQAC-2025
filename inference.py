@@ -118,7 +118,7 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
 
 def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
     results = []
-    
+    full_results = []
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         question = item["text"]
@@ -150,11 +150,11 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         # print("Number: ", len(map_ids))
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if len(map_ids) > 50:
-                num_chunks = len(map_ids) // 50 + 1
+            if len(map_ids) > 100:
+                num_chunks = len(map_ids) // 100 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 50: (i + 1) * 50]
+                    chunk_ids = map_ids[i * 100: (i + 1) * 100]
                     if len(chunk_ids) == 0:
                         continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
@@ -167,9 +167,11 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         
         # post processing character error
         saved = {"question_id": question_id, "relevant_articles": []}
+        full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
         for idx, idx_pred in enumerate(map_ids):
             pred = doc_refers[idx_pred]
-            saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+            saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1]})
+            full_saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
         results.append(saved)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
