@@ -43,7 +43,7 @@ torchrun --nproc_per_node 2 \
     --learning_rate 6e-5 \
     --fp16 \
     --num_train_epochs 3 \
-    --per_device_train_batch_size 2 \
+    --per_device_train_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --dataloader_drop_last True \
     --warmup_ratio 0.1 \
@@ -54,4 +54,4 @@ torchrun --nproc_per_node 2 \
     --save_steps 1000 \
     --hub_token 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 \
     --push_to_hub \
-    --hub_model_id phonghoccode/ALQAC_2025_Reranker_top20
+    --hub_model_id phonghoccode/ALQAC_2025_Reranker_top20_final

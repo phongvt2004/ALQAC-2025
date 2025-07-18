@@ -80,6 +80,7 @@ if __name__ == '__main__':
             save_pairs.append(save_dict)
         save_path = args.save_pair_path
         os.makedirs(save_path, exist_ok=True)
+        print(f"Number of pairs: {len(save_pairs)}")
         with open(os.path.join(save_path, f"rerank_data_top{top_n}.jsonl"), "w") as f:
             for item in save_pairs:
                 json_line = json.dumps(item, ensure_ascii=False)
