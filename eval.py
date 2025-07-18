@@ -116,7 +116,7 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         return rrf_scores
 
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None, save_output=False):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
@@ -129,6 +129,8 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
     k = num_eval
+    results = []
+    
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         if question_id not in eval_qid:
@@ -182,20 +184,28 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         false_positive = 0
         
         # post processing character error
+        saved = {"predictions": [], "scores": []}
         for idx, idx_pred in enumerate(map_ids):
             pred = doc_refers[idx_pred]
-            
+            saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+            saved["scores"].append(new_scores[idx])
             for article in relevant_articles:
                 if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
                     true_positive += 1
                 else:
                     false_positive += 1
+        saved["ground_truth"] = relevant_articles  
+        results.append(saved)
         precision = true_positive/(true_positive + false_positive + 1e-20)
         recall = true_positive/actual_positive
         f2 = calculate_f2(precision, recall)
         total_precision += precision
         total_recall += recall
         total_f2 += f2
+    if save_output:
+        with open("eval_results.json", "w") as f:
+            json.dump(results, f, indent=4)
+        print("Results saved to eval_results.json")
     avg_f2 = total_f2 / k
     avg_precision = total_precision / k
     avg_recall = total_recall / k
@@ -300,7 +310,9 @@ if __name__ == "__main__":
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--fixed-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
+    parser.add_argument("--combine-type", default="default", type=str, help="number of eval data")
     parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_3_weight", default=0.0, type=float, help="number of eval data")
@@ -309,13 +321,14 @@ if __name__ == "__main__":
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
     parser.add_argument("--step", default=0.1, type=float, help="number of eval data")
+    parser.add_argument("--alpha", default=0.5, type=float, help="number of eval data")
     
     args = parser.parse_args()
 
     # define path to model
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
-    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
+    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
 
     
     
@@ -334,7 +347,7 @@ if __name__ == "__main__":
     train_path = os.path.join(args.raw_data, "alqac25_train.json")
     data = json.load(open(train_path))
     print("Number of questions: ", len(question_items))
-    
+    models = []
     # load bm25 model 
     bm25 = load_bm25(args.bm25_path)
     # load corpus to search
@@ -343,14 +356,19 @@ if __name__ == "__main__":
         doc_refers = pickle.load(doc_refer_file)
     # load pre encoded for legal corpus
     if args.encode_legal_data:
-        emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
-    else:
-        emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
-    if args.encode_question_data:
         print("Start loading model.")
         models = [SentenceTransformer(name) for name in model_names]
         wseg = [("wseg" in name) for name in model_names]
         print("Number of pretrained models: ", len(models))
+        emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
+    else:
+        emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
+    if args.encode_question_data:
+        if len(models) == 0:
+            print("Start loading model.")
+            models = [SentenceTransformer(name) for name in model_names]
+            wseg = [("wseg" in name) for name in model_names]
+            print("Number of pretrained models: ", len(models))
         question_embs = encode_question(question_items, models, wseg)
     else:
         question_embs = load_encoded_question_data("encoded_question_data.pkl")
