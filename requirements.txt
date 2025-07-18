@@ -13,5 +13,3 @@ pyvi
 transformers[torch]
 scipy
 scikit-learn
-vllm>=0.8.5
-FlagEmbedding[finetune]
