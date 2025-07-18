@@ -88,7 +88,7 @@ def load_models(root, model_names):
     return models
 
 def load_question_json(data_path):
-    question_data = json.load(open(os.path.join(data_path, "queries.json")))
+    question_data = json.load(open(os.path.join(data_path, "private_queries.json")))
     return question_data
 
 def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.5, k = 60):
@@ -126,7 +126,6 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         cos_sim = []
 
         for idx_2, _ in enumerate(models):
-            print(question_embs[idx_2].keys())
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
             scores = util.cos_sim(emb1, emb2)
