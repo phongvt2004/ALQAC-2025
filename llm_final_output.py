@@ -40,7 +40,23 @@ for item in data:
     ground_truth = item["ground_truth"]
     relevant_articles = item["relevant_articles"]
     for article in relevant_articles:
+        is_match = False
         for answer in ground_truth:
             if article["law_id"] == answer["law_id"] and article["article_id"] == answer["article_id"]:
                 true_positive += 1
-            
+                is_match = True
+                break
+        if not is_match:
+            false_positive += 1
+    precision = true_positive / (true_positive + false_positive + 1e-20)
+    recall = true_positive / (len(ground_truth) + 1e-20)
+    f2 = (5 * precision * recall) / (4 * precision + recall + 1e-20)
+    total_f2 += f2
+    total_precision += precision
+    total_recall += recall
+avg_f2 = total_f2 / len(data)
+avg_precision = total_precision / len(data)
+avg_recall = total_recall / len(data)
+print(f"Average F2: {avg_f2}")
+print(f"Average Precision: {avg_precision}")
+print(f"Average Recall: {avg_recall}")
