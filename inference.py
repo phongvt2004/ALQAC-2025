@@ -126,6 +126,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         cos_sim = []
 
         for idx_2, _ in enumerate(models):
+            print(question_embs[idx_2].keys())
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
             scores = util.cos_sim(emb1, emb2)
