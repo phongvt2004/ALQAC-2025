@@ -165,6 +165,12 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             map_ids = map_ids[new_predictions]
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
         
+        # Limit to top 5 answers if more than 5 results
+        if len(map_ids) > 5:
+            top_5_indices = np.argsort(new_scores)[-5:]
+            map_ids = map_ids[top_5_indices]
+            new_scores = new_scores[top_5_indices]
+        
         # post processing character error
         saved = {"question_id": question_id, "relevant_articles": []}
         full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
@@ -178,7 +184,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         json.dump(full_results, f, indent=4, ensure_ascii=False)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
-    print(f"Results saved to {args.output_file}.json")
+    print(f"Results saved to {args.output_file}.json") 
 
 if __name__ == "__main__":
 
@@ -258,4 +264,3 @@ if __name__ == "__main__":
     fixed_score = args.fixed_score
     pred_list = []
     inference(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_score, reranker, tokenizer, others)
-    
