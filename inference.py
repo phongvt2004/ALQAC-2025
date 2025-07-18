@@ -174,7 +174,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             full_saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
         results.append(saved)
         full_results.append(full_saved)
-    with open(f"full_{args.output_file}", "w", encoding="utf-8") as f:
+    with open(f"full_{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(full_results, f, indent=4, ensure_ascii=False)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
