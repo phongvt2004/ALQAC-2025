@@ -4,31 +4,59 @@ from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
 import json
 import re
+from tqdm import tqdm
 load_dotenv()
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-client = InferenceClient(
-    provider="featherless-ai",
-    api_key=os.environ["HUGGINGFACE_TOKEN"],
+model_name = "Qwen/Qwen3-8B-FP8"
+
+# load the tokenizer and the model
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype="auto",
+    device_map="auto"
 )
+
+
+def llm_generate(prompt: str):
+    # prepare the model input
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=True # Switches between thinking and non-thinking modes. Default is True.
+    )
+    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+    # conduct text completion
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=32768
+    )
+    output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist() 
+    
+    # parsing thinking content
+    try:
+        # rindex finding 151668 (</think>)
+        index = len(output_ids) - output_ids[::-1].index(151668)
+    except ValueError:
+        index = 0
+    
+    thinking_content = tokenizer.decode(output_ids[:index], skip_special_tokens=True).strip("\n")
+    content = tokenizer.decode(output_ids[index:], skip_special_tokens=True).strip("\n")
+    return content
 
 with open("eval_results.json", "r") as f:
     data = json.load(f)
 
-for item in data:
+for item in tqdm(data):
     predictions = item["predictions"]
     question = item["question"]
-    completion = client.chat.completions.create(
-    model="Qwen/Qwen3-8B",
-    messages=[
-        {
-            "role": "user",
-            "content": f"Question: {question}\n{predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant information and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are relevant to the question and help to answer the question."
-        }
-    ],
-    )
-    
-    text = completion.choices[0].message.content
-    clean_text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    prompt = f"Question: {question}\n{predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant information and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are relevant to the question and help to answer the question."
+    clean_text = llm_generate(prompt)
     output = ast.literal_eval(clean_text)
     item["relevant_articles"] = output
 total_f2 = 0
