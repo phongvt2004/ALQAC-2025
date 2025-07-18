@@ -183,6 +183,7 @@ if __name__ == "__main__":
     parser.add_argument("--reranker", default="", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
+    parser.add_argument("--output_file", default="output.json", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--fixed-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
