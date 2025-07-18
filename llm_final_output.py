@@ -16,7 +16,7 @@ model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype="auto",
     device_map="auto",
-    attn_implementation="spda"
+    attn_implementation="sdpa"
 )
 
 
