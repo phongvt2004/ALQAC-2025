@@ -21,13 +21,7 @@ import itertools
 import csv
 
 load_dotenv()
-
-range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-fixed_scores_list = [10, 15]
-model_1_weights = [0.5]
-model_2_weights = [0.5]
-combine_types = ["default", "weighted_sum", "rrf"]
-alphas = [0.3, 0.5, 0.7]
+combine_types = ["weighted_sum"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -61,6 +55,8 @@ def encode_question(question_data, models, wseg):
             emb_quest_dict[question_id] = model.encode(question, show_progress_bar=False)
         
         question_embs.append(emb_quest_dict)
+    with open("encoded_private_question_data.pkl", "wb") as f:
+        pickle.dump(question_embs, f)
     return question_embs
 
 def load_encoded_legal_corpus(legal_data_path):
@@ -68,6 +64,12 @@ def load_encoded_legal_corpus(legal_data_path):
     with open(legal_data_path, "rb") as f1:
         emb_legal_data = pickle.load(f1)
     return emb_legal_data
+
+def load_encoded_question_data(question_data_path):
+    print("Start loading question data.")
+    with open(question_data_path, "rb") as f2:
+        question_embs = pickle.load(f2)
+    return question_embs
 
 def load_bm25(bm25_path):
     with open(bm25_path, "rb") as bm_file:
@@ -105,7 +107,7 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         return bm25_scores * dense_scores
     elif combine_type == "weighted_sum":
         from sklearn.preprocessing import normalize
-        bm25_scores = normalize(bm25_scores.reshape(1, -1), norm='l1').flatten()
+        bm25_scores = normalize(bm25_scores.reshape(1, -1), norm='l2').flatten()
         return alpha * dense_scores + (1 - alpha) * bm25_scores
     elif combine_type == "rrf":
         dense_ranks = dense_scores.argsort().argsort() + 1
@@ -115,7 +117,8 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
 
 
 def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
-    submission = []
+    results = []
+    
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         question = item["text"]
@@ -134,10 +137,6 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             tokenized_query = bm25_tokenizer(question)
             doc_scores = bm25.get_scores(tokenized_query)
             new_scores = combine_scores(cos_sim, doc_scores, combine_type=args.combine_type, alpha=args.alpha)
-            if args.combine_type == "rrf":
-                fixed_scores = 2/61*fixed_scores/20
-            elif args.combine_type == "weighted_sum":
-                fixed_scores = fixed_scores / 10
         else:
             new_scores = cos_sim
         
@@ -148,13 +147,16 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else fixed_scores)))[0]
         map_ids = predictions[new_predictions]
         new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
+        # print("Number: ", len(map_ids))
         if reranker is not None and len(map_ids) > 1:
             rerank_scores = []
-            if len(map_ids) > 15:
-                num_chunks = len(map_ids) // 15 + 1
+            if len(map_ids) > 50:
+                num_chunks = len(map_ids) // 50 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 15: (i + 1) * 15]
+                    chunk_ids = map_ids[i * 50: (i + 1) * 50]
+                    if len(chunk_ids) == 0:
+                        continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
             else:
                 rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
@@ -163,20 +165,15 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             map_ids = map_ids[new_predictions]
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
         
-        answer = {
-            "question_id": question_id,
-            "relevant_articles": [],
-        }
         # post processing character error
+        saved = {"question_id": question_id, "relevant_articles": []}
         for idx, idx_pred in enumerate(map_ids):
             pred = doc_refers[idx_pred]
-            answer["relevant_articles"].append({
-                "law_id": pred[0],
-                "article_id": pred[1],
-            })
-        submission.append(answer)
-    with open("submission.json", "w") as f:
-        json.dump(submission, f, indent=4)
+            saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+        results.append(saved)
+    with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=4, ensure_ascii=False)
+    print(f"Results saved to {args.output_file}.json")
 
 if __name__ == "__main__":
 
@@ -187,26 +184,27 @@ if __name__ == "__main__":
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
     parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--fixed-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
+    parser.add_argument("--combine-type", default="default", type=str, help="number of eval data")
     parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_3_weight", default=0.0, type=float, help="number of eval data")
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
+    parser.add_argument("--encode_question_data", action="store_true", help="for question data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
     parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
     parser.add_argument("--step", default=0.1, type=float, help="number of eval data")
+    parser.add_argument("--alpha", default=0.5, type=float, help="number of eval data")
     
     args = parser.parse_args()
 
     # define path to model
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
-    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
-    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
+    # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
 
-    print("Start loading model.")
-    models = [SentenceTransformer(name) for name in model_names]
-    wseg = [("wseg" in name) for name in model_names]
-    print("Number of pretrained models: ", len(models))
+    
     
     reranker_name = args.reranker if hasattr(args, 'reranker') else None
     if reranker_name:
@@ -220,10 +218,10 @@ if __name__ == "__main__":
 
     # load question from json file
     question_items = load_question_json(args.raw_data)
-    train_path = os.path.join(args.raw_data, "alqac25_train.json")
+    train_path = os.path.join(args.raw_data, "alqac25_private_test_Task_1.json")
     data = json.load(open(train_path))
     print("Number of questions: ", len(question_items))
-    
+    models = []
     # load bm25 model 
     bm25 = load_bm25(args.bm25_path)
     # load corpus to search
@@ -232,16 +230,26 @@ if __name__ == "__main__":
         doc_refers = pickle.load(doc_refer_file)
     # load pre encoded for legal corpus
     if args.encode_legal_data:
+        print("Start loading model.")
+        models = [SentenceTransformer(name) for name in model_names]
+        wseg = [("wseg" in name) for name in model_names]
+        print("Number of pretrained models: ", len(models))
         emb_legal_data = encode_legal_data(args.raw_data, models, wseg)
     else:
         emb_legal_data = load_encoded_legal_corpus('encoded_legal_data.pkl')
-
-    # encode question for query
-    question_embs = encode_question(question_items, models, wseg)
-
+    if args.encode_question_data:
+        if len(models) == 0:
+            print("Start loading model.")
+            models = [SentenceTransformer(name) for name in model_names]
+            wseg = [("wseg" in name) for name in model_names]
+            print("Number of pretrained models: ", len(models))
+        question_embs = encode_question(question_items, models, wseg)
+    else:
+        question_embs = load_encoded_question_data("encoded_private_question_data.pkl")
     # define top n for compare and range of score
     top_n = 2000
     range_score = args.range_score
-
+    fixed_score = args.fixed_score
     pred_list = []
-    inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, 10, reranker, tokenizer, others)
+    inference(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_score, reranker, tokenizer, others, True)
+    

@@ -184,7 +184,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         false_positive = 0
         
         # post processing character error
-        saved = {"predictions": [], "scores": []}
+        saved = {"question_id": question_id, "question": question, "predictions": [], "scores": []}
         for idx, idx_pred in enumerate(map_ids):
             pred = doc_refers[idx_pred]
             saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
