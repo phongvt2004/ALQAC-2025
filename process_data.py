@@ -35,6 +35,16 @@ if __name__ == '__main__':
                 print(corpus_id)
             relevant_docs[qid].add(corpus_id)
     queries = dict(zip(query_ids, query_text))
+    if os.path.exists(os.path.join(args.data_path, "alqac25_private_test_Task_1.json")):
+        with open(os.path.join(args.data_path, "alqac25_private_test_Task_1.json"), "r", encoding="utf-8") as f:
+            private_test_data = json.load(f)
+        for item in private_test_data:
+            qid = item["question_id"]
+            query_ids.append(qid)
+            query_text.append(item["text"])
+        private_queries = dict(zip(query_ids, query_text))
+        with open(os.path.join(args.data_path, "private_queries.json"), "w", encoding="utf-8") as f:
+            json.dump(private_queries, f, ensure_ascii=False)
 
     with open(os.path.join(args.data_path, "corpus.json"), "w", encoding="utf-8") as f:
         json.dump(corpus, f, ensure_ascii=False)
