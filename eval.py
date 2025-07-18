@@ -203,7 +203,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         total_recall += recall
         total_f2 += f2
     if save_output:
-        with open("eval_results.json", "w") as f:
+        with open("eval_results.json", "w", encoding="utf-8") as f:
             json.dump(results, f, indent=4)
         print("Results saved to eval_results.json")
     avg_f2 = total_f2 / k
