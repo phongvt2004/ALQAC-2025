@@ -257,5 +257,5 @@ if __name__ == "__main__":
     range_score = args.range_score
     fixed_score = args.fixed_score
     pred_list = []
-    inference(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_score, reranker, tokenizer, others, True)
+    inference(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_score, reranker, tokenizer, others)
     
