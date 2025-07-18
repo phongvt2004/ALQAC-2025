@@ -16,7 +16,7 @@ model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype="auto",
     device_map="auto",
-    attn_implementation="flash_attention_2"
+    attn_implementation="spda"
 )
 
 
