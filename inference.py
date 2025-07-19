@@ -4,7 +4,7 @@ import json
 import torch
 from tqdm import tqdm
 from rank_bm25 import *
-# import llm_system
+import llm_system
 
 import argparse
 import os
