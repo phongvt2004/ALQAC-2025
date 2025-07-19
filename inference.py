@@ -4,6 +4,8 @@ import json
 import torch
 from tqdm import tqdm
 from rank_bm25 import *
+import llm_system
+
 import argparse
 import os
 import pickle
@@ -11,7 +13,6 @@ import glob
 from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
-import llm_system
 
 from sentence_transformers import SentenceTransformer, util, CrossEncoder
 from huggingface_hub import login
