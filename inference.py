@@ -253,22 +253,8 @@ if __name__ == "__main__":
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
     model_names = ["phonghoccode/ALQAC_2025_Embedding_final", "phonghoccode/ALQAC_2025_Embedding_final_wseg"]
-
-    
-    
-    reranker_name = args.reranker if hasattr(args, 'reranker') else None
-    if reranker_name:
-        reranker, tokenizer, others = create_reranker(reranker_name)
-        print(f"Using reranker: {reranker_name}")
-    else:
-        reranker = None
-        tokenizer = None
-        others = None
-        print("No reranker specified, using default settings.")
-
-    # load question from json file
-    question_items = load_question_json(args.raw_data)
     train_path = os.path.join(args.raw_data, "alqac25_private_test_Task_1.json")
+
     data = json.load(open(train_path))
     if args.create_law_mapping:
         import llm_system
@@ -290,6 +276,20 @@ if __name__ == "__main__":
         with open("pre_laws.json", "w") as f:
             json.dump(law_mapping, f, indent=4, ensure_ascii=False)
         exit(0)
+    
+    reranker_name = args.reranker if hasattr(args, 'reranker') else None
+    if reranker_name:
+        reranker, tokenizer, others = create_reranker(reranker_name)
+        print(f"Using reranker: {reranker_name}")
+    else:
+        reranker = None
+        tokenizer = None
+        others = None
+        print("No reranker specified, using default settings.")
+
+    # load question from json file
+    question_items = load_question_json(args.raw_data)
+    
     print("Number of questions: ", len(question_items))
     models = []
     # load bm25 model 
