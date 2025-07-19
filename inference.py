@@ -143,6 +143,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         
         if question_id not in law_mapping:
             relevant_laws = law_mapping.get(question_id, [])
+            print(relevant_laws)
             law_mapping[question_id] = relevant_laws
         else:
             relevant_laws = law_mapping[question_id]
