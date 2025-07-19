@@ -206,7 +206,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             final_predictions = final_predictions[mask]
         if len(final_predictions) > 1:
             predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in final_predictions]
-            prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
+            prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]."
             clean_text = llm_system.llm_generate(prompt)
             output = ast.literal_eval(clean_text)
             saved["relevant_articles"] = output
