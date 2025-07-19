@@ -180,7 +180,8 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         score_mask = filtered_scores >= (max_score - (range_score if reranker is None else fixed_scores))
         final_predictions = filtered_predictions[score_mask]
         final_scores = filtered_scores[score_mask]
-        
+        if question_id == "private_test_alquac25_57":
+            print(len(final_predictions), final_scores)
         if reranker is not None and len(final_predictions) > 1:
             # ...existing reranker code...
             rerank_scores = []
