@@ -50,8 +50,10 @@ python eval.py \
     --model_3_weight 0.0 \
     --hybrid \
     --alpha 0.5 \
+    --build_faiss \
+    --faiss_index_type "Flat" \
+    --faiss_path "faiss_indices" \
     --use_faiss \
-    --faiss_path "faiss_indices"
 
 echo -e "\n=== Running FAISS Evaluation with Law Filtering ==="
 # Evaluation with FAISS and law filtering
