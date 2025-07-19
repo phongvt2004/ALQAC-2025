@@ -117,6 +117,11 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         rrf_scores = 1 / (dense_ranks + k) + 1 / (bm25_ranks + k)
         return rrf_scores
 
+def get_law_by_llm(questions, laws):
+    prompt = f"Given the following questions: {questions} and laws: {laws}, please return a list of laws that are relevant to these questions. Maximum 2 laws. The laws should be in the format: [\"law_1\', \"law_2\"]."
+    response = llm_system.llm_generate(prompt)
+    output = ast.literal_eval(response)
+    return output
 
 def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
     results = []
@@ -126,7 +131,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         question = item["text"]
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         cos_sim = []
-
+        relevant_laws = get_law_by_llm(question, laws)
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
@@ -142,41 +147,62 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         else:
             new_scores = cos_sim
         
-        max_score = np.max(new_scores)
         predictions = np.argpartition(new_scores, len(new_scores) - top_n)[-top_n:]
-        new_scores = new_scores[predictions]
+        # Fix: Filter predictions by relevant laws first
+        filtered_predictions = []
+        for pred_idx in predictions:
+            pred = doc_refers[pred_idx]
+            if pred[0] in relevant_laws:
+                filtered_predictions.append(pred_idx)
         
-        new_predictions = np.where(new_scores >= (max_score - (range_score if reranker is None else fixed_scores)))[0]
-        map_ids = predictions[new_predictions]
-        new_scores = new_scores[new_scores >= (max_score - (range_score if reranker is None else fixed_scores))]
-        # print("Number: ", len(map_ids))
-        if reranker is not None and len(map_ids) > 1:
+        # Check if we have any valid predictions
+        if len(filtered_predictions) == 0:
+            continue
+            
+        filtered_predictions = np.array(filtered_predictions)
+        filtered_scores = new_scores[filtered_predictions]
+        
+        # Check for empty scores array
+        if len(filtered_scores) == 0:
+            continue
+            
+        max_score = np.max(filtered_scores)
+        
+        # Fix: Use proper indexing
+        score_mask = filtered_scores >= (max_score - (range_score if reranker is None else fixed_scores))
+        final_predictions = filtered_predictions[score_mask]
+        final_scores = filtered_scores[score_mask]
+        
+        if reranker is not None and len(final_predictions) > 1:
+            # ...existing reranker code...
             rerank_scores = []
-            if len(map_ids) > 100:
-                num_chunks = len(map_ids) // 100 + 1
+            if len(final_predictions) > 100:
+                num_chunks = len(final_predictions) // 100 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = map_ids[i * 100: (i + 1) * 100]
+                    chunk_ids = final_predictions[i * 100: (i + 1) * 100]
                     if len(chunk_ids) == 0:
                         continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
             else:
-                rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in map_ids], others)
-            max_rerank_score = np.max(rerank_scores)
-            new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
-            map_ids = map_ids[new_predictions]
-            new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
+                rerank_scores = reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in final_predictions], others)
+            
+            if len(rerank_scores) > 0:
+                max_rerank_score = np.max(rerank_scores)
+                rerank_mask = np.array(rerank_scores) >= (max_rerank_score - range_score)
+                final_predictions = final_predictions[rerank_mask]
+                final_scores = final_scores[rerank_mask]
         saved = {"question_id": question_id, "relevant_articles": []}
         full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
         # Limit to top 5 answers if more than 5 results
-        if len(map_ids) > 1:
-            predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in map_ids]
+        if len(final_predictions) > 1:
+            predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in final_predictions]
             prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
             clean_text = llm_system.llm_generate(prompt)
             output = ast.literal_eval(clean_text)
             saved["relevant_articles"] = output
         else:
-            for idx, idx_pred in enumerate(map_ids):
+            for idx, idx_pred in enumerate(final_predictions):
                 pred = doc_refers[idx_pred]
                 saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1]})
                 full_saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
