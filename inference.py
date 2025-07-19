@@ -202,7 +202,10 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         saved = {"question_id": question_id, "relevant_articles": []}
         full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
         # Limit to top 5 answers if more than 5 results
-        
+        if len(final_predictions) > 5:
+            mask = np.argpartition(final_scores, len(final_scores) - 5)[-5:]
+            final_predictions = final_predictions[mask]
+            
         for idx, idx_pred in enumerate(final_predictions):
             pred = doc_refers[idx_pred]
             saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1]})
