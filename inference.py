@@ -148,6 +148,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             relevant_laws = law_mapping[question_id]
         relevant_laws = get_law_by_llm(question, laws)
         # relevant_laws = laws
+        cos_sim = []
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]

@@ -129,7 +129,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     total_recall = 0
     laws = []
     with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
-        corpus = json.load(f)
+        corpus = json.load()
     for item in corpus:
         laws.append(item["id"])
     with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
