@@ -60,6 +60,10 @@ if __name__ == '__main__':
         print(model)
     else:
         model = SentenceTransformer(args.pretrained_model)
+    
+    # Move model to cuda:1
+    model = model.to("cuda:1")
+    
     save_pairs = load_pair_data(args.pair_data_path)
     print(f"There are {len(save_pairs)} pair sentences.")
     train_examples = {"question": [], "document": [], "label": []}
