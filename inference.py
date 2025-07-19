@@ -131,15 +131,14 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         corpus = json.load(f)
     for item in corpus:
         laws.append(item["id"])
-    for idx, item in tqdm(enumerate(data), total=len(data)):
+    for idx, item in tqdm(enumerate(data[8:10]), total=len(data[8:10])):
         question_id = item["question_id"]
         
         question = item["text"]
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         cos_sim = []
         relevant_laws = get_law_by_llm(question, laws)
-        if question_id == "private_test_alquac25_9":
-            print(f"Relevant laws for question {question_id}: {relevant_laws}")
+        print(f"Relevant laws for question {question_id}: {relevant_laws}")
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
