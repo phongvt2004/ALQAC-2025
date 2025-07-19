@@ -1,3 +1,4 @@
+import ast
 import numpy as np
 import json
 import torch
@@ -7,6 +8,7 @@ import argparse
 import os
 import pickle
 import glob
+import llm_system
 from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
@@ -164,12 +166,29 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
             new_predictions = np.where(rerank_scores >= (max_rerank_score - range_score))[0]
             map_ids = map_ids[new_predictions]
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
-        
+        saved = {"question_id": question_id, "relevant_articles": []}
+        full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
         # Limit to top 5 answers if more than 5 results
         if len(map_ids) > 5:
-            top_5_indices = np.argsort(new_scores)[-5:]
-            map_ids = map_ids[top_5_indices]
-            new_scores = new_scores[top_5_indices]
+            if len(map_ids) > 1:
+                predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in map_ids]
+                prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
+                clean_text = llm_system.llm_generate(prompt)
+                output = ast.literal_eval(clean_text)
+                saved["predictions"] = output
+                
+                for pred in output:
+                    is_match = False
+                    for article in relevant_articles:
+                        if pred["law_id"] == article["law_id"] and pred["article_id"] == article["article_id"]:
+                            true_positive += 1
+                            is_match = True
+                            break  # Stop checking once we find a match
+                    
+                    # Only count as false positive if no match was found
+                    if not is_match:
+                        false_positive += 1
+            
         
         # post processing character error
         saved = {"question_id": question_id, "relevant_articles": []}

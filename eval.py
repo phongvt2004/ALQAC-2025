@@ -20,7 +20,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from reranker import create_reranker, reranking
 import itertools
 import csv
-import llm_final_output
+import llm_system
 load_dotenv()
 combine_types = ["weighted_sum"]
 
@@ -188,7 +188,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         if len(map_ids) > 1:
             predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in map_ids]
             prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
-            clean_text = llm_final_output.llm_generate(prompt)
+            clean_text = llm_system.llm_generate(prompt)
             output = ast.literal_eval(clean_text)
             saved["predictions"] = output
             
