@@ -25,7 +25,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 sampling_params = SamplingParams(temperature=0.6, top_p=0.95, top_k=20, max_tokens=1000)
 
 # Initialize the vLLM engine
-llm = LLM(model=model_name)
+llm = LLM(model=model_name, disable_log_stats=True)
 
 def llm_generate(prompt: str):
     messages = [
