@@ -139,6 +139,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         cos_sim = []
         relevant_laws = get_law_by_llm(question, laws)
+        print(f"Relevant laws for question {question_id}: {relevant_laws}")
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
