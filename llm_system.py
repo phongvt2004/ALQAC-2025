@@ -8,14 +8,14 @@ from tqdm import tqdm
 load_dotenv()
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_name = "Qwen/Qwen3-4B"
+model_name = "Qwen/Qwen3--FP8"
 
 # load the tokenizer and the model
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype="auto",
-    device_map="cuda:1",
+    device_map="cuda:0",
     attn_implementation="sdpa"  # Use flash attention for better performance
 )
 
