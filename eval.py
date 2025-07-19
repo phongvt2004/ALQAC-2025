@@ -217,7 +217,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         false_positive = 0
         saved = {"question_id": question_id, "question": question, "predictions": [], "scores": []}
         
-        if len(final_predictions) > 1:
+        if len(final_predictions) > 3:
             predictions_for_llm = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in final_predictions]
             prompt = f"Question: {question}\nPredictions: {predictions_for_llm}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
             clean_text = llm_system.llm_generate(prompt)
