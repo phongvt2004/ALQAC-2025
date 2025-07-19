@@ -35,7 +35,8 @@ def llm_generate(prompt: str):
         messages,
         tokenize=False,
         add_generation_prompt=True,
-        enable_thinking=False,  # Set to False to strictly disable thinking
+        enable_thinking=False,  # Set to False to strictly disable 
+        use_tqdm=False
     )
     
 
