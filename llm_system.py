@@ -15,7 +15,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype="auto",
-    device_map="cuda:0",
+    device_map="auto",
     attn_implementation="sdpa"  # Use flash attention for better performance
 )
 
