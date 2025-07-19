@@ -142,12 +142,10 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         
         if question_id not in law_mapping:
-            relevant_laws = law_mapping.get(question_id, [])
-            print(relevant_laws)
+            relevant_laws = get_law_by_llm(question, laws)
             law_mapping[question_id] = relevant_laws
         else:
             relevant_laws = law_mapping[question_id]
-        relevant_laws = get_law_by_llm(question, laws)
         # relevant_laws = laws
         cos_sim = []
         for idx_2, _ in enumerate(models):
