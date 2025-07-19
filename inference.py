@@ -242,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--encode_legal_data", action="store_true", help="for legal data encoding")
     parser.add_argument("--encode_question_data", action="store_true", help="for question data encoding")
     parser.add_argument("--hybrid", action="store_true", help="for legal data encoding")
+    parser.add_argument("--create_law_mapping", action="store_true", help="for legal data encoding")
     parser.add_argument("--find-best-score", action="store_true", help="for legal data encoding")
     parser.add_argument("--step", default=0.1, type=float, help="number of eval data")
     parser.add_argument("--alpha", default=0.5, type=float, help="number of eval data")
