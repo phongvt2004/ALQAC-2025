@@ -1,3 +1,4 @@
+import ast
 import numpy as np
 import json
 import torch
@@ -19,7 +20,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from reranker import create_reranker, reranking
 import itertools
 import csv
-
+import llm_final_output
 load_dotenv()
 combine_types = ["weighted_sum"]
 
@@ -182,24 +183,43 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             new_scores = new_scores[rerank_scores >= (max_rerank_score - range_score)]
         true_positive = 0
         false_positive = 0
-        
-        # post processing character error
         saved = {"question_id": question_id, "question": question, "predictions": [], "scores": []}
-        for idx, idx_pred in enumerate(map_ids):
-            pred = doc_refers[idx_pred]
-            saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
-            saved["scores"].append(new_scores[idx])
-            # Check if this prediction matches any relevant article
-            is_match = False
-            for article in relevant_articles:
-                if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
-                    true_positive += 1
-                    is_match = True
-                    break  # Stop checking once we find a match
+        
+        if len(map_ids) > 1:
+            predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in map_ids]
+            prompt = f"Question: {question}\n{predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant information and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are relevant to the question and help to answer the question."
+            clean_text = llm_final_output.llm_generate(prompt)
+            output = ast.literal_eval(clean_text)
+            saved["predictions"] = [{"law_id": pred["law_id"], "article_id": pred["article_id"], "text": doc_refers[doc_refers.index((pred["law_id"], pred["article_id"]))][2]} for pred in output]
             
-            # Only count as false positive if no match was found
-            if not is_match:
-                false_positive += 1
+            for pred in output:
+                is_match = False
+                for article in relevant_articles:
+                    if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
+                        true_positive += 1
+                        is_match = True
+                        break  # Stop checking once we find a match
+                
+                # Only count as false positive if no match was found
+                if not is_match:
+                    false_positive += 1
+        
+        else:
+            # post processing character error
+            for idx, idx_pred in enumerate(map_ids):
+                pred = doc_refers[idx_pred]
+                saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+                # Check if this prediction matches any relevant article
+                is_match = False
+                for article in relevant_articles:
+                    if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
+                        true_positive += 1
+                        is_match = True
+                        break  # Stop checking once we find a match
+                
+                # Only count as false positive if no match was found
+                if not is_match:
+                    false_positive += 1
         saved["ground_truth"] = relevant_articles  
         results.append(saved)
         precision = true_positive/(true_positive + false_positive + 1e-20)
