@@ -120,7 +120,7 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         return rrf_scores
 
 def get_law_by_llm(questions, laws):
-    prompt = f"Given the following questions: {questions} and laws: {laws}, please return a list of laws that are relevant to these questions. The laws should be in the format: [\"law_1\', \"law_2\"].  Only return if you sure 100% if not return []."
+    prompt = f"Given the following laws: {laws} and a question from user: {question}, please return a list of laws that are relevant to these questions. If there are any Luật (law) mention in the question use it. The laws should be in the format: [\"law_1\', \"law_2\"].  Only return if you sure 100% if not return []."
     response = llm_system.llm_generate(prompt)
     output = ast.literal_eval(response)
     return output
