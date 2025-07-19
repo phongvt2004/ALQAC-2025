@@ -19,17 +19,15 @@ model_name = "Qwen/Qwen3-4B-FP8"
 #     attn_implementation="sdpa"  # Use flash attention for better performance
 # )
 # Initialize the tokenizer
-def load_llm():
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # Configurae the sampling parameters (for thinking mode)
-    sampling_params = SamplingParams(temperature=0.6, top_p=0.95, top_k=20, max_tokens=1000)
+# Configurae the sampling parameters (for thinking mode)
+sampling_params = SamplingParams(temperature=0.6, top_p=0.95, top_k=20, max_tokens=1000)
 
-    # Initialize the vLLM engine
-    llm = LLM(model=model_name, disable_log_stats=True)
-    return tokenizer, sampling_params, llm
+# Initialize the vLLM engine
+llm = LLM(model=model_name, disable_log_stats=True)
 
-def llm_generate(prompt: str, tokenizer, sampling_params, llm):
+def llm_generate(prompt: str):
     messages = [
         {"role": "user", "content": prompt}
     ]
