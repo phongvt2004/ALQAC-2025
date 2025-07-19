@@ -36,12 +36,13 @@ def llm_generate(prompt: str):
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,  # Set to False to strictly disable 
-        use_tqdm=False
     )
     
 
     # Generate outputs
-    outputs = llm.generate([text], sampling_params)
+    outputs = llm.generate([text], sampling_params, 
+        use_tqdm=False
+                           )
     return outputs[0].outputs[0].text.strip()
     # # prepare the model input
     # messages = [
