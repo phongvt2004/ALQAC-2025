@@ -246,9 +246,10 @@ def faiss_search_with_law_filter(faiss_indices, question_embs, question_id, law_
     # Use indices from first model (truncated to min_length)
     return combined_scores, all_indices[0][:min_length]
 
-def get_related_law_ids_with_llm(question, law_id_mapping, doc_refers, top_laws=5):
+def get_related_law_ids(question, law_id_mapping, doc_refers, top_laws=5):
     """
-    Use LLM to get potentially relevant law IDs based on question analysis.
+    Get potentially relevant law IDs based on keyword matching or other heuristics.
+    This is a simple implementation - can be enhanced with more sophisticated methods.
     
     Args:
         question (str): The question text
@@ -259,89 +260,24 @@ def get_related_law_ids_with_llm(question, law_id_mapping, doc_refers, top_laws=
     Returns:
         list: List of potentially relevant law IDs
     """
-    # Get unique law IDs and sample documents from each
-    law_summaries = {}
-    for law_id in law_id_mapping:
-        # Get a few sample documents from this law for context
-        sample_indices = law_id_mapping[law_id][:3]  # Take first 3 documents as sample
-        sample_texts = [doc_refers[idx][2][:200] + "..." for idx in sample_indices]  # Truncate for brevity
-        law_summaries[law_id] = sample_texts
-    
-    # Create prompt for LLM
-    law_info = []
-    for law_id, sample_texts in law_summaries.items():
-        law_info.append(f"Law ID: {law_id}\nSample content: {' | '.join(sample_texts)}")
-    
-    prompt = f"""Question: {question}
-
-Available Laws:
-{chr(10).join(law_info)}
-
-Based on the question above, identify the most relevant law IDs that could help answer this legal question. Consider the content and context of each law.
-
-Return only a Python list of law IDs in this exact format: ["law_id_1", "law_id_2", ...]. Return at most {top_laws} law IDs. If no laws seem relevant, return an empty list [].
-
-Example format: ["12/2017/QH14", "68/2014/QH13"]"""
-
-    try:
-        clean_text = llm_final_output.llm_generate(prompt)
-        # Parse the LLM response
-        import re
-        # Extract list from response
-        list_match = re.search(r'\[(.*?)\]', clean_text)
-        if list_match:
-            law_ids_str = list_match.group(1)
-            # Parse individual law IDs
-            law_ids = []
-            for match in re.findall(r'"([^"]*)"', law_ids_str):
-                if match in law_id_mapping:
-                    law_ids.append(match)
-            return law_ids[:top_laws]
-        else:
-            print("Could not parse LLM response for law IDs, falling back to keyword matching")
-            return get_related_law_ids_fallback(question, law_id_mapping, doc_refers, top_laws)
-    except Exception as e:
-        print(f"Error using LLM for law ID detection: {e}, falling back to keyword matching")
-        return get_related_law_ids_fallback(question, law_id_mapping, doc_refers, top_laws)
-
-def get_related_law_ids_fallback(question, law_id_mapping, doc_refers, top_laws=5):
-    """
-    Fallback method for getting related law IDs using keyword matching.
-    This is the original implementation renamed as fallback.
-    """
+    # Simple keyword-based approach
     question_lower = question.lower()
     law_scores = {}
     
     for law_id in law_id_mapping:
+        # Count keyword matches in this law's documents
         score = 0
         for doc_idx in law_id_mapping[law_id]:
             doc_text = doc_refers[doc_idx][2].lower()
+            # Simple scoring based on common words
             common_words = set(question_lower.split()) & set(doc_text.split())
             score += len(common_words)
         
         law_scores[law_id] = score
     
+    # Return top scoring law IDs
     sorted_laws = sorted(law_scores.items(), key=lambda x: x[1], reverse=True)
     return [law_id for law_id, score in sorted_laws[:top_laws] if score > 0]
-
-def get_related_law_ids(question, law_id_mapping, doc_refers, top_laws=5, use_llm=True):
-    """
-    Get potentially relevant law IDs based on question analysis.
-    
-    Args:
-        question (str): The question text
-        law_id_mapping (dict): Mapping from law_id to document indices
-        doc_refers (list): Document references
-        top_laws (int): Number of top law IDs to return
-        use_llm (bool): Whether to use LLM for law ID detection
-    
-    Returns:
-        list: List of potentially relevant law IDs
-    """
-    if use_llm:
-        return get_related_law_ids_with_llm(question, law_id_mapping, doc_refers, top_laws)
-    else:
-        return get_related_law_ids_fallback(question, law_id_mapping, doc_refers, top_laws)
 
 def faiss_search(faiss_indices, question_embs, question_id, top_k=2000, weights=None):
     if weights is None:
@@ -513,10 +449,8 @@ def evaluation_with_faiss(args, data, models, faiss_indices, bm25, doc_refers, q
                 # Use specified law IDs
                 law_ids_filter = args.target_law_ids
             else:
-                # Use LLM to detect relevant law IDs
-                use_llm_filter = getattr(args, 'use_llm_law_filter', True)
-                law_ids_filter = get_related_law_ids(question, law_id_mapping, doc_refers, args.top_laws, use_llm_filter)
-            print(f"Question: {question[:100]}...")
+                # Auto-detect relevant law IDs
+                law_ids_filter = get_related_law_ids(question, law_id_mapping, doc_refers, args.top_laws)
             print(f"Filtering search to laws: {law_ids_filter}")
         
         # Use FAISS search with optional law filtering
@@ -732,7 +666,6 @@ if __name__ == "__main__":
     parser.add_argument("--use_law_filter", action="store_true", help="filter search space by law IDs")
     parser.add_argument("--target_law_ids", nargs="+", help="specific law IDs to search within")
     parser.add_argument("--top_laws", default=5, type=int, help="number of top laws to consider when auto-filtering")
-    parser.add_argument("--use_llm_law_filter", action="store_true", help="use LLM to detect relevant law IDs")
     
     args = parser.parse_args()
 
