@@ -141,7 +141,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         question = item["text"]
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         
-        if question_id not in law_mapping:
+        if question_id not in list(law_mapping.keys()):
             relevant_laws = get_law_by_llm(question, laws)
             law_mapping[question_id] = relevant_laws
         else:
