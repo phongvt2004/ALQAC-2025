@@ -8,7 +8,7 @@ from tqdm import tqdm
 load_dotenv()
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from vllm import LLM, SamplingParams
-model_name = "Qwen/Qwen3-0.6B-FP8"
+model_name = "Qwen/Qwen3-4B-FP8"
 
 # load the tokenizer and the model
 # tokenizer = AutoTokenizer.from_pretrained(model_name)
