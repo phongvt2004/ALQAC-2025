@@ -117,9 +117,9 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
         rrf_scores = 1 / (dense_ranks + k) + 1 / (bm25_ranks + k)
         return rrf_scores
 
-def get_law_by_llm(questions, laws):
+def get_law_by_llm(questions, laws, llm_tokenizer, samlping_params, llm):
     prompt = f"Given the following questions: {questions} and laws: {laws}, please return a list of laws that are relevant to these questions. Maximum 2 laws. The laws should be in the format: [\"law_1\', \"law_2\"]."
-    response = llm_system.llm_generate(prompt)
+    response = llm_system.llm_generate(prompt, llm_tokenizer, samlping_params, llm)
     output = ast.literal_eval(response)
     return output
 
@@ -135,6 +135,8 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
     if os.path.exists("pre_laws.json"):
         with open("pre_laws.json", "r") as f:
             law_mapping = json.load(f)
+    if len(law_mapping.keys()) == 0:
+        llm_tokenizer, samlping_params, llm = llm_system.load_llm()
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         
@@ -142,7 +144,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
         
         if question_id not in list(law_mapping.keys()):
-            relevant_laws = get_law_by_llm(question, laws)
+            relevant_laws = get_law_by_llm(question, laws, llm_tokenizer, samlping_params, llm)
             law_mapping[question_id] = relevant_laws
         else:
             relevant_laws = law_mapping[question_id]
