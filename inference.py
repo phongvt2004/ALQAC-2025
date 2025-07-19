@@ -8,7 +8,6 @@ import argparse
 import os
 import pickle
 import glob
-import llm_system
 from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
@@ -126,11 +125,6 @@ def get_law_by_llm(questions, laws):
 def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
     results = []
     full_results = []
-    laws = []
-    with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
-        corpus = json.load(f)
-    for item in corpus:
-        laws.append(item["id"])
     law_mapping = {}
     if os.path.exists("pre_laws.json"):
         with open("pre_laws.json", "r") as f:
@@ -140,14 +134,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         
         question = item["text"]
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
-        
-        if question_id not in list(law_mapping.keys()):
-            relevant_laws = get_law_by_llm(question, laws)
-            if len(relevant_laws) == 0:
-                relevant_laws = laws
-            law_mapping[question_id] = relevant_laws
-        else:
-            relevant_laws = law_mapping[question_id]
+        relevant_laws = law_mapping[question_id]
         # relevant_laws = laws
         cos_sim = []
         for idx_2, _ in enumerate(models):
@@ -283,6 +270,8 @@ if __name__ == "__main__":
     train_path = os.path.join(args.raw_data, "alqac25_private_test_Task_1.json")
     data = json.load(open(train_path))
     if args.create_law_mapping:
+        import llm_system
+        
         laws = []
         with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
             corpus = json.load(f)
@@ -299,6 +288,7 @@ if __name__ == "__main__":
             law_mapping[question_id] = relevant_laws
         with open("pre_laws.json", "w") as f:
             json.dump(law_mapping, f, indent=4, ensure_ascii=False)
+        exit(0)
     print("Number of questions: ", len(question_items))
     models = []
     # load bm25 model 
