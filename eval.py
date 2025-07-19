@@ -190,7 +190,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             prompt = f"Question: {question}\n{predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant information and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are relevant to the question and help to answer the question."
             clean_text = llm_final_output.llm_generate(prompt)
             output = ast.literal_eval(clean_text)
-            saved["predictions"] = [{"law_id": pred["law_id"], "article_id": pred["article_id"], "text": doc_refers[doc_refers.index((pred["law_id"], pred["article_id"]))][2]} for pred in output]
+            saved["predictions"] = output
             
             for pred in output:
                 is_match = False
