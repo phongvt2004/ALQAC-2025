@@ -126,6 +126,11 @@ def get_law_by_llm(questions, laws):
 def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None):
     results = []
     full_results = []
+    laws = []
+    with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
+        corpus = json.load(f)
+    for item in corpus:
+        laws.append(item["id"])
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         question = item["text"]
