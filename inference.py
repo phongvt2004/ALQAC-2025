@@ -11,6 +11,8 @@ import glob
 from utils import bm25_tokenizer, calculate_f2
 import utils
 import random
+import llm_system
+
 from sentence_transformers import SentenceTransformer, util, CrossEncoder
 from huggingface_hub import login
 from dotenv import load_dotenv
@@ -257,7 +259,6 @@ if __name__ == "__main__":
 
     data = json.load(open(train_path))
     if args.create_law_mapping:
-        import llm_system
         
         laws = []
         with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
