@@ -232,7 +232,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         json.dump(full_results, f, indent=4, ensure_ascii=False)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
-    with open("pre_laws.json", "r") as f:
+    with open("pre_laws.json", "w") as f:
         json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     print(f"Results saved to {args.output_file}.json") 
 
