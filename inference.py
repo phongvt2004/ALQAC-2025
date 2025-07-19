@@ -131,12 +131,21 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         corpus = json.load(f)
     for item in corpus:
         laws.append(item["id"])
+    law_mapping = {}
+    if os.path.exists("pre_laws.json"):
+        with open("pre_laws.json", "r") as f:
+            law_mapping = json.load(f)
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
         
         question = item["text"]
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
-        cos_sim = []
+        
+        if question_id not in law_mapping:
+            relevant_laws = law_mapping.get(question_id, [])
+            law_mapping[question_id] = relevant_laws
+        else:
+            relevant_laws = law_mapping[question_id]
         relevant_laws = get_law_by_llm(question, laws)
         # relevant_laws = laws
         for idx_2, _ in enumerate(models):
@@ -222,6 +231,8 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         json.dump(full_results, f, indent=4, ensure_ascii=False)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
+    with open("pre_laws.json", "r") as f:
+        json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     print(f"Results saved to {args.output_file}.json") 
 
 if __name__ == "__main__":

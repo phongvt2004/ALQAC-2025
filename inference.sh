@@ -1,0 +1,3 @@
+python inference.py --raw_data ALQAC_2025_data --range-score 0.5 --fixed-score 0.05 --model_1_weight 0.5 --model_2_weight 0.5 --alpha 0.3 --reranker phonghoccode/ALQAC_2025_Reranker_top20_final --combine-type weighted_sum --hybrid --output_file output1
+python inference.py --raw_data ALQAC_2025_data --range-score 0.5 --fixed-score 0.08 --model_1_weight 0.5 --model_2_weight 0.5 --alpha 0.3 --reranker phonghoccode/ALQAC_2025_Reranker_top20_final --combine-type weighted_sum --hybrid --output_file output2
+python inference.py --raw_data ALQAC_2025_data --range-score 0.2 --fixed-score 0.05 --model_1_weight 0.5 --model_2_weight 0.5 --alpha 0.3 --reranker phonghoccode/ALQAC_2025_Reranker_top20_final --combine-type weighted_sum --hybrid --output_file output3
