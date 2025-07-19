@@ -233,8 +233,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         json.dump(full_results, f, indent=4, ensure_ascii=False)
     with open(f"{args.output_file}.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
-    with open("pre_laws.json", "w") as f:
-        json.dump(law_mapping, f, indent=4, ensure_ascii=False)
+    
     print(f"Results saved to {args.output_file}.json") 
 
 if __name__ == "__main__":
@@ -283,6 +282,23 @@ if __name__ == "__main__":
     question_items = load_question_json(args.raw_data)
     train_path = os.path.join(args.raw_data, "alqac25_private_test_Task_1.json")
     data = json.load(open(train_path))
+    if args.create_law_mapping:
+        laws = []
+        with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
+            corpus = json.load(f)
+        for item in corpus:
+            laws.append(item["id"])
+        law_mapping = {}
+        for idx, item in tqdm(enumerate(data), total=len(data)):
+            question_id = item["question_id"]
+            
+            question = item["text"]
+            relevant_laws = get_law_by_llm(question, laws)
+            if len(relevant_laws) == 0:
+                relevant_laws = laws
+            law_mapping[question_id] = relevant_laws
+        with open("pre_laws.json", "w") as f:
+            json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     print("Number of questions: ", len(question_items))
     models = []
     # load bm25 model 
