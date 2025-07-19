@@ -169,21 +169,17 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         saved = {"question_id": question_id, "relevant_articles": []}
         full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
         # Limit to top 5 answers if more than 5 results
-        if len(map_ids) > 5:
+        if len(map_ids) > 1:
             predictions = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in map_ids]
             prompt = f"Question: {question}\nPredictions: {predictions}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
             clean_text = llm_system.llm_generate(prompt)
             output = ast.literal_eval(clean_text)
             saved["relevant_articles"] = output
-            
-        
-        # post processing character error
-        saved = {"question_id": question_id, "relevant_articles": []}
-        full_saved = {"question_id": question_id, "question": question, "relevant_articles": []}
-        for idx, idx_pred in enumerate(map_ids):
-            pred = doc_refers[idx_pred]
-            saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1]})
-            full_saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+        else:
+            for idx, idx_pred in enumerate(map_ids):
+                pred = doc_refers[idx_pred]
+                saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1]})
+                full_saved["relevant_articles"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
         results.append(saved)
         full_results.append(full_saved)
     with open(f"full_{args.output_file}.json", "w", encoding="utf-8") as f:
