@@ -195,7 +195,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             for pred in output:
                 is_match = False
                 for article in relevant_articles:
-                    if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
+                    if pred["law_id"] == article["law_id"] and pred["ảrticle"] == article["article_id"]:
                         true_positive += 1
                         is_match = True
                         break  # Stop checking once we find a match
