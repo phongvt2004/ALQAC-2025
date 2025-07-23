@@ -138,6 +138,6 @@ dmypy.json
 # Generated folder
 ./generated_data/
 ./zac2021-ltr-data/
-ALQAC_2025_data
+ALQAC_2025_*
 pair_data
 saved_model
