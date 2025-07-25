@@ -1,4 +1,4 @@
-# ALQAC 2025 Technical Report
+# Hallucineers Team Technical Report
 ## Submission Details
 ### Task 1:
 - **Submission File Name**: `submission_1.json`
