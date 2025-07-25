@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--rerank", action="store_true", help="use data for rerank")
-    parser.add_argument("--data_path", default="ALQAC_2025_data", type=str, help="path to input data")
+    parser.add_argument("--data_path", default="../ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_pair_path", default="pair_data/", type=str, help="path to save pair sentence directory")
     parser.add_argument("--saved_model_path", default="saved_model", type=str, help="path to saved model data")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")

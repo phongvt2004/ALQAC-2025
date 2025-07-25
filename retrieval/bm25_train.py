@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument("--load-docs", action="store_false")
     parser.add_argument("--zalo", action="store_true", help="use Zalo data")
     parser.add_argument("--num-eval", default=500, type=str)
-    parser.add_argument("--data-path", default="ALQAC_2025_data", type=str, help="path to input data")
+    parser.add_argument("--data-path", default="../ALQAC_2025_data", type=str, help="path to input data")
     parser.add_argument("--save_path", default="saved_model", type=str, help="path to input data")
     
     args = parser.parse_args()

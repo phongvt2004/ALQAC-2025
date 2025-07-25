@@ -1,33 +1,48 @@
-# ALQAC-2025 Retrieval System
+# ALQAC 2025 Technical Report
+## Submission Details
+### Task 1:
+- **Submission File Name**: `submission_1.json`
+**Description**: Rerank range score = 0.5, retrieve range scores = 0.05, alpha = 0.3, model_1_weight = 0.5, model_2_weight = 0.5
 
-This repository contains the retrieval system for the ALQAC-2025 (Automated Legal Question Answering Challenge) competition. The system implements a two-stage retrieval approach using BM25 for initial ranking and sentence transformers for re-ranking.
+- **Submission File Name**: `submission_2.json`
+ **Description**: Rerank range score = 2.0, retrieve range scores = 0.1, alpha = 0.3, model_1_weight = 0.5, model_2_weight = 0.5
 
-## Overview
+- **Submission File Name**: `submission_3.json`
+ **Description**: Rerank range score = 3.0, retrieve range scores = 0.1, alpha = 0.3, model_1_weight = 0.5, model_2_weight = 0.5
 
-The retrieval pipeline consists of:
-1. **Data Processing**: Preprocessing legal documents and questions
-2. **BM25 Training**: Training BM25 models for initial retrieval
-3. **Pair Generation**: Creating training pairs for re-ranking
-4. **Sentence Transformer Training**: Fine-tuning embedding models for re-ranking
+### Task 2:
+- **Submission File Name**: `submission1.json`
+- **Description**: Combined the answers from two SFT models: `qwen_3e` and `qwen_14e`.
 
-## Prerequisites
+- **Submission File Name**: `submission2.json`
+- **Description**: An ensemble of the **three GPRO-trained models** using a voting mechanism to determine the final answer.
 
-- Python 3.8+
-- Required Python packages (install via `pip install -r requirements.txt`)
-- ALQAC 2025 dataset
+- **Submission File Name**: `submission3.json`
+- **Description**: An ensemble combining the **three GPRO models and the `qwen_14e` SFT model** (total of 4 models), also using a voting mechanism.
 
-## Dataset Structure
+## Environment Setup
 
-```
-../ALQAC_2025_data/
-├── main_data/           # Main competition data
-└── additional_data/
-    └── zalo/           # Additional Zalo data
-```
+1. **Prerequisites**:
+   - Python 3.8 or higher
+   - CUDA-compatible GPU (recommended)
+   - pip (Python package manager)
 
-## Quick Start
+2. **Create and activate a virtual environment (recommended)**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### 1. Data Processing
+3. **Install dependencies**:
+   ```bash
+   cd retrieval
+   pip install -r requirements.txt
+   ```
+
+## Running the Code
+### Task 1: Legal Document Retrieval
+
+#### 1. Data Processing
 
 Process the main competition data:
 ```bash
@@ -39,7 +54,7 @@ Process additional Zalo data:
 python process_data.py --data-path ../ALQAC_2025_data/additional_data/zalo --zalo
 ```
 
-### 2. BM25 Model Training
+#### 2. BM25 Model Training
 
 Train BM25 on main data:
 ```bash
@@ -51,7 +66,7 @@ Train BM25 on Zalo data:
 python bm25_train.py --data-path ../ALQAC_2025_data/additional_data/zalo --zalo --save_path saved_model_zalo
 ```
 
-### 3. Generate Training Pairs
+#### 3. Generate Training Pairs
 
 Create pairs for main data with re-ranking:
 ```bash
@@ -63,7 +78,7 @@ Create pairs for Zalo data:
 python bm25_create_pairs.py --rerank --data_path ../ALQAC_2025_data/additional_data/zalo --zalo --save_pair_path pair_data_zalo --model_path saved_model_zalo/bm25_Plus_04_06_model_full_manual_stopword --saved_model_path saved_model_zalo --eval_size 0.0
 ```
 
-### 4. Fine-tune Sentence Transformers
+#### 4. Fine-tune Sentence Transformers
 
 Train on Zalo data with Vietnamese embedding model:
 ```bash
@@ -79,7 +94,7 @@ python train_sentence_transformer.py --pretrained_model huyydangg/DEk21_hcmute_e
 --pair_data_path pair_data/bm_25_pairs_top50 --batch_size 16 --data_path ../ALQAC_2025_data
 ```
 
-### 5. Train Reranker
+#### 5. Train Reranker
 Install FlagEmbedding library:
 ```bash
 pip install -U FlagEmbedding[finetune]
@@ -122,41 +137,8 @@ torchrun --nproc_per_node 2 \
     --per_device_train_batch_size 4
 ```
 
-## Command Line Arguments
 
-### Common Arguments
-- `--data-path`: Path to the dataset
-- `--zalo`: Flag to use Zalo dataset format
-- `--save_path`: Directory to save trained models
-- `--eval_size`: Proportion of data for evaluation (0.0 = no evaluation split)
-
-### BM25 Arguments
-- `--rerank`: Enable re-ranking mode for pair generation
-- `--model_path`: Path to pre-trained BM25 model
-- `--save_pair_path`: Directory to save generated pairs
-
-### Sentence Transformer Arguments
-- `--pretrained_model`: HuggingFace model identifier
-- `--step`: Number of training steps
-- `--round`: Training round number
-- `--wseg`: Enable word segmentation
-- `--batch_size`: Training batch size
-- `--pair_data_path`: Path to training pairs
-
-### Reranker Arguments
-- `--model_name_or_path`: Base model for reranker training
-- `--train_data`: Path to reranker training data (JSONL format)
-- `--cache_dir`: Directory for model cache
-- `--cache_path`: Directory for data cache
-- `--train_group_size`: Number of passages per query in training
-- `--query_max_len`: Maximum query length
-- `--passage_max_len`: Maximum passage length
-- `--output_dir`: Directory to save trained reranker
-- `--num_train_epochs`: Number of training epochs
-- `--per_device_train_batch_size`: Batch size per GPU device
-
-
-## Evaluation
+#### 7. Evaluation
 
 Evaluate the retrieval system's performance using the following command:
 
@@ -176,20 +158,7 @@ python eval.py \
     
 ```
 
-### Evaluation Arguments
-
-- `--raw_data`: Path to the raw data directory
-- `--model_{1,2}_weight`: Weights for model ensemble (should sum to 1.0)
-- `--hybrid`: Enable hybrid BM25 + dense retrieval
-- `--combine_type`: How to combine scores (`weighted_sum`, `rrf`, or `default`)
-- `--alpha`: Weight for dense scores in hybrid retrieval (0.0-1.0)
-- `--eval_size`: Proportion of data to use for evaluation (0.0-1.0)
-- `--top_n`: Number of top documents to retrieve
-- `--use_reranker`: Enable reranker for final ranking
-- `--reranker_path`: Path to pretrained reranker 
-- `--create_law_mapping`: Whether to create law mapping for evaluation
-
-## Grid search
+#### 8. Grid search
 
 Grid search the best parameters using the following command:
 
@@ -208,21 +177,7 @@ python eval.py \
     --create_law_mapping
 ```
 
-### Grid search Arguments
-
-- `--raw_data`: Path to the raw data directory
-- `--model_{1,2}_weight`: Weights for model ensemble (should sum to 1.0)
-- `--hybrid`: Enable hybrid BM25 + dense retrieval
-- `--combine_type`: How to combine scores (`weighted_sum`, `rrf`, or `default`)
-- `--alpha`: Weight for dense scores in hybrid retrieval (0.0-1.0)
-- `--eval_size`: Proportion of data to use for evaluation (0.0-1.0)
-- `--top_n`: Number of top documents to retrieve
-- `--use_reranker`: Enable reranker for final ranking
-- `--reranker_path`: Path to pretrained reranker model
-- `--find-best-score`: Find the best score for each question
-- `--create_law_mapping`: Whether to create law mapping for evaluation
-
-## Inference
+#### 9. Inference
 
 Run inference on new questions using the following command:
 
@@ -242,8 +197,29 @@ python inference.py \
     --output_file predictions
 ```
 
-### Inference Arguments
 
-- `--output_file`: Path to save prediction results (JSON format)
-- Other arguments are the same as in the evaluation script
+### Task 2: Legal Question Answering
 
+- **Data Preparation (Generating the "think" component):**
+  To augment the dataset with the reasoning part, run the notebook:
+  `alqac-gen-data-train.ipynb`
+
+- **SFT Training:**
+  To perform Supervised Fine-Tuning (SFT) on the full dataset, run:
+  `alqac-train-data-train-qwen-fulldata.ipynb`
+
+- **GPRO Training:**
+  To train the model using GPRO with the three different configurations, run these notebooks:
+  - `alqac-train-grpo-config1.ipynb`
+  - `alqac-train-grpo-config2.ipynb`
+  - `alqac-train-grpo-config3.ipynb`
+
+- **Inference:**
+  - To perform inference on the test set using the SFT model, run:
+    `alqac-inference-test-qwen-fulldata.ipynb`
+  - To perform inference on the test set using the GPRO models, run:
+    `alqac-inference-test-qwen-grpo-fulldata.ipynb`
+
+- **Generate Submission Files:**
+  To create the three final submission files by ensembling the model outputs, run:
+  `submit.ipynb`

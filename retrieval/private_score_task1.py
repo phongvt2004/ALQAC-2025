@@ -2,7 +2,7 @@ import os
 import json
 from utils import calculate_f2
 submission_path = "ALQAC_2025_submission"
-ground_truth_path = "ALQAC_2025_data/alqac25_private_test_task2.json"
+ground_truth_path = "../ALQAC_2025_data/alqac25_private_test_task2.json"
 
 with open(ground_truth_path, "r", encoding="utf-8") as f:
     ground_truth_data = json.load(f)

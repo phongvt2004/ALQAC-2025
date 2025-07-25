@@ -22,7 +22,7 @@ import itertools
 import csv
 import llm_system
 load_dotenv()
-combine_types = ["weighted_sum"]
+combine_types = ["weighted_sum", "rrf", "default"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
@@ -118,16 +118,20 @@ def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.
 
 
 def get_law_by_llm(questions, laws):
-    prompt = f"Given the following questions: {questions} and laws: {laws}, please return a list of laws that are relevant to these questions. Maximum 2 laws. The laws should be in the format: [\"law_1\', \"law_2\"]."
+    prompt = f"Given the following laws: {laws} and a question from user: {question}, please return a list of laws that are relevant to these questions. If there are any Luật (law) mention in the question use it. The laws should be in the format: [\"law_1\', \"law_2\"].  Only return if you sure 100% if not return []."
     response = llm_system.llm_generate(prompt)
     output = ast.literal_eval(response)
     return output
 
-def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_scores = 10, reranker = None, tokenizer = None, others = None, save_output=False):
+def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_embs, rerank_range_score, retrieve_range_scores = 10, reranker = None, tokenizer = None, others = None, save_output=False):
     total_f2 = 0
     total_precision = 0
     total_recall = 0
     laws = []
+    law_mapping = {}
+    if os.path.exists("pre_laws.json"):
+        with open("pre_laws.json", "r") as f:
+            law_mapping = json.load(f)
     with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
         corpus = json.load()
     for item in corpus:
@@ -150,8 +154,8 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
+        relevant_laws = law_mapping[question_id]
         cos_sim = []
-        relevant_laws = get_law_by_llm(question, laws)
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
             emb2 = emb_legal_data[idx_2]
@@ -189,7 +193,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         max_score = np.max(filtered_scores)
         
         # Fix: Use proper indexing
-        score_mask = filtered_scores >= (max_score - (range_score if reranker is None else fixed_scores))
+        score_mask = filtered_scores >= (max_score - (rerank_range_score if reranker is None else retrieve_range_scores))
         final_predictions = filtered_predictions[score_mask]
         final_scores = filtered_scores[score_mask]
         
@@ -209,50 +213,30 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
             
             if len(rerank_scores) > 0:
                 max_rerank_score = np.max(rerank_scores)
-                rerank_mask = np.array(rerank_scores) >= (max_rerank_score - range_score)
+                rerank_mask = np.array(rerank_scores) >= (max_rerank_score - rerank_range_score)
                 final_predictions = final_predictions[rerank_mask]
                 final_scores = final_scores[rerank_mask]
         
         true_positive = 0
         false_positive = 0
         saved = {"question_id": question_id, "question": question, "predictions": [], "scores": []}
-        
         if len(final_predictions) > 3:
-            predictions_for_llm = [{"law_id": doc_refers[i][0], "article_id": doc_refers[i][1], "text": doc_refers[i][2]} for i in final_predictions]
-            prompt = f"Question: {question}\nPredictions: {predictions_for_llm}\nThis is outputs from a legal document retrieval system. Remove any irrelevant or unnecessary articles and return a list of true predictions in the format: [{{'law_id': '...', 'article_id': '...'}}]. Only include predictions that are help to answer the question only. If do not have any relevant articles, return an empty list []."
-            clean_text = llm_system.llm_generate(prompt)
-            try:
-                output = ast.literal_eval(clean_text)
-                saved["predictions"] = output
+            mask = np.argpartition(final_scores, len(final_scores) - 3)[-3:]
+            final_predictions = final_predictions[mask]
+        
+        for idx_pred in final_predictions:
+            pred = doc_refers[idx_pred]
+            saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
+            
+            is_match = False
+            for article in relevant_articles:
+                if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
+                    true_positive += 1
+                    is_match = True
+                    break
                 
-                for pred in output:
-                    is_match = False
-                    for article in relevant_articles:
-                        if pred["law_id"] == article["law_id"] and pred["article_id"] == article["article_id"]:
-                            true_positive += 1
-                            is_match = True
-                            break
-                    
-                    if not is_match:
-                        false_positive += 1
-            except (ValueError, SyntaxError) as e:
-                print(f"Error parsing LLM output: {e}")
-                continue
-        else:
-            # Handle single prediction case
-            for idx_pred in final_predictions:
-                pred = doc_refers[idx_pred]
-                saved["predictions"].append({"law_id": pred[0], "article_id": pred[1], "text": pred[2]})
-                
-                is_match = False
-                for article in relevant_articles:
-                    if pred[0] == article["law_id"] and pred[1] == article["article_id"]:
-                        true_positive += 1
-                        is_match = True
-                        break
-                
-                if not is_match:
-                    false_positive += 1
+            if not is_match:
+                false_positive += 1
                     
         saved["ground_truth"] = relevant_articles  
         results.append(saved)
@@ -274,24 +258,24 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
 def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
     results = []
     # Prepare result logging
-    range_scores_list = [0.0, 1.0, 2.0]
-    fixed_scores_list = {
+    rerank_range_scores_list = [0.0, 1.0, 2.0]
+    retrieve_range_scores_list = {
         "default": [10, 15],
         "weighted_sum": [0.05, 0.08, 0.1],
         "rrf": [0.001, 0.005, 0.01]
     }
     alphas = [0.3, 0.5, 0.7]
     for combine_type in tqdm(combine_types):
-        for range_score in tqdm(range_scores_list, desc=f"Processing range_score"):
+        for rerank_range_score in tqdm(rerank_range_scores_list, desc=f"Processing rerank_range_score"):
             try:
                 args.model_1_weight = 0.5
                 args.model_2_weight = 0.5
-                args.range_score = range_score
+                args.rerank_range_score = rerank_range_score
                 args.combine_type = combine_type
                 args.alpha = 0
                 if combine_type == "weighted_sum":
-                    for fixed_score in fixed_scores_list[combine_type]:
-                        print(f"Evaluating with range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
+                    for retrieve_range_score in retrieve_range_scores_list[combine_type]:
+                        print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
                         for alpha in alphas:
                             args.alpha = alpha
                             avg_f2, avg_precision, avg_recall = evaluation(
@@ -302,15 +286,15 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                                 bm25,
                                 doc_refers,
                                 question_embs,
-                                range_score,
-                                fixed_score,
+                                rerank_range_score,
+                                retrieve_range_score,
                                 reranker,
                                 tokenizer,
                                 others
                             )
                             result_row = {
-                                "range_score": range_score,
-                                "fixed_score": fixed_score,
+                                "rerank_range_score": rerank_range_score,
+                                "retrieve_range_score": retrieve_range_score,
                                 "combine_type": combine_type,
                                 "alpha": alpha,
                                 "avg_f2": avg_f2,
@@ -319,8 +303,8 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             }
                             results.append(result_row)
                 else:
-                    for fixed_score in fixed_scores_list[combine_type]:
-                        print(f"Evaluating with range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
+                    for retrieve_range_score in retrieve_range_scores_list[combine_type]:
+                        print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
                         
                         avg_f2, avg_precision, avg_recall = evaluation(
                             args,
@@ -330,16 +314,16 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             bm25,
                             doc_refers,
                             question_embs,
-                            range_score,
-                            fixed_score,
+                            rerank_range_score,
+                            retrieve_range_score,
                             reranker,
                             tokenizer,
                             others
                         )
 
                         result_row = {
-                            "range_score": range_score,
-                            "fixed_score": fixed_score,
+                            "rerank_range_score": rerank_range_score,
+                            "retrieve_range_score": retrieve_range_score,
                             "combine_type": combine_type,
                             "alpha": 0,
                             "avg_f2": avg_f2,
@@ -349,7 +333,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                         results.append(result_row)
             except Exception as e:
                 print(f"Error in combination: {e}")
-                print(f"Skipping combination: range_score={range_score}, fixed_score={fixed_score}, combine_type={combine_type}")
+                print(f"Skipping combination: rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
 
         # Save intermediate results after each run
     with open("grid_search_results.csv", "w", newline='') as csvfile:
@@ -364,13 +348,13 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw_data", default="ALQAC_2025_data", type=str)
+    parser.add_argument("--raw_data", default="../ALQAC_2025_data", type=str)
     parser.add_argument("--saved_model", default="saved_model", type=str)
     parser.add_argument("--reranker", default="", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
-    parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
-    parser.add_argument("--fixed-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--rerank-range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--retrieve-range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--combine-type", default="default", type=str, help="number of eval data")
     parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
@@ -414,6 +398,24 @@ if __name__ == "__main__":
     print("Load legal data.")
     with open(args.legal_data, "rb") as doc_refer_file:
         doc_refers = pickle.load(doc_refer_file)
+    if args.create_law_mapping:
+        
+        laws = []
+        with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
+            corpus = json.load(f)
+        for item in corpus:
+            laws.append(item["id"])
+        law_mapping = {}
+        for idx, item in tqdm(enumerate(data), total=len(data)):
+            question_id = item["question_id"]
+            
+            question = item["text"]
+            relevant_laws = get_law_by_llm(question, laws)
+            if len(relevant_laws) == 0:
+                relevant_laws = laws
+            law_mapping[question_id] = relevant_laws
+        with open("pre_laws.json", "w") as f:
+            json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     # load pre encoded for legal corpus
     if args.encode_legal_data:
         print("Start loading model.")
@@ -434,14 +436,14 @@ if __name__ == "__main__":
         question_embs = load_encoded_question_data("encoded_question_data.pkl")
     # define top n for compare and range of score
     top_n = 2000
-    range_score = args.range_score
-    fixed_score = args.fixed_score
+    rerank_range_score = args.rerank_range_score
+    retrieve_range_score = args.retrieve_range_score
     pred_list = []
     if args.find_best_score:
         print("Start finding best score.")
         results = grid_search(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs)
     else:
-        avg_f2, avg_precision, avg_recall = evaluation(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, range_score, fixed_score, reranker, tokenizer, others, True)
+        avg_f2, avg_precision, avg_recall = evaluation(args, data, model_names, emb_legal_data, bm25, doc_refers, question_embs, rerank_range_score, retrieve_range_score, reranker, tokenizer, others, True)
     
         print(f"Average F2: \t\t\t\t{avg_f2}")
         print(f"Average Precision: {avg_precision}")

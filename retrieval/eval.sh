@@ -1,4 +1,4 @@
-python eval.py --raw_data ALQAC_2025_data --range-score 0.1 --find-best-score --step 0.5 --model_1_weight 0.0 --model_2_weight 0.0 --model_3_weight 1.0 --hybrid --encode_legal_data
-python eval.py --raw_data ALQAC_2025_data --range-score 0.1 --find-best-score --step 0.8 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 1.0 --hybrid
-python eval.py --raw_data ALQAC_2025_data --range-score 0.1 --find-best-score --step 1.0 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 0.0 --hybrid --reranker Qwen/Qwen3-Reranker-0.6B
-python eval.py --raw_data ALQAC_2025_data --range-score 0.1 --find-best-score --step 1.0 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 0.0 --hybrid --reranker AITeamVN/Vietnamese_Reranker
+python eval.py --raw_data ../ALQAC_2025_data --rerank-range-score 0.1 --find-best-score --step 0.5 --model_1_weight 0.0 --model_2_weight 0.0 --model_3_weight 1.0 --hybrid --encode_legal_data
+python eval.py --raw_data ../ALQAC_2025_data --rerank-range-score 0.1 --find-best-score --step 0.8 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 1.0 --hybrid
+python eval.py --raw_data ../ALQAC_2025_data --rerank-range-score 0.1 --find-best-score --step 1.0 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 0.0 --hybrid --reranker Qwen/Qwen3-Reranker-0.6B
+python eval.py --raw_data ../ALQAC_2025_data --rerank-range-score 0.1 --find-best-score --step 1.0 --model_1_weight 0.5 --model_2_weight 0.5 --model_3_weight 0.0 --hybrid --reranker AITeamVN/Vietnamese_Reranker

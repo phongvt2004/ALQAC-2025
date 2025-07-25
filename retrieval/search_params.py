@@ -15,8 +15,8 @@ from eval import evaluation
 
 load_dotenv()
 
-range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-fixed_scores_list = [5, 10, 15]
+rerank_range_scores_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+retrieve_range_scores_list = [5, 10, 15]
 model_1_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
 model_2_weights = [0.0, 0.3, 0.5, 0.7, 1.0]
 combine_types = ["default", "weighted_sum", "rrf"]
@@ -27,8 +27,8 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     # Prepare result logging
     results = []
     search_space = list(itertools.product(
-        range_scores_list,
-        fixed_scores_list,
+        rerank_range_scores_list,
+        retrieve_range_scores_list,
         model_1_weights,
         model_2_weights,
         combine_types,
@@ -36,14 +36,14 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     ))
 
     print(f"Total combinations: {len(search_space)}")
-    for idx, (range_score, fixed_score, w1, w2, combine_type, alpha) in tqdm(enumerate(search_space), total=len(search_space)):
+    for idx, (rerank_range_score, retrieve_range_score, w1, w2, combine_type, alpha) in tqdm(enumerate(search_space), total=len(search_space)):
         if w1 + w2 != 1.0:
             continue  # Skip combinations where weights do not sum to 1.0
         print(f"Combination {idx + 1}/{len(search_space)}:")
         args.model_1_weight = w1
         args.model_2_weight = w2
-        args.range_score = range_score
-        args.fixed_score = fixed_score
+        args.rerank_range_score = rerank_range_score
+        args.retrieve_range_score = retrieve_range_score
         args.combine_type = combine_type
         args.alpha = alpha
 
@@ -55,16 +55,16 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
             bm25,
             doc_refers,
             question_embs,
-            range_score,
-            fixed_score,
+            rerank_range_score,
+            retrieve_range_score,
             reranker,
             tokenizer,
             others
         )
 
         result_row = {
-            "range_score": range_score,
-            "fixed_score": fixed_score,
+            "rerank_range_score": rerank_range_score,
+            "retrieve_range_score": retrieve_range_score,
             "model_1_weight": w1,
             "model_2_weight": w2,
             "combine_type": combine_type,
@@ -90,12 +90,12 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw_data", default="ALQAC_2025_data", type=str)
+    parser.add_argument("--raw_data", default="../ALQAC_2025_data", type=str)
     parser.add_argument("--saved_model", default="saved_model", type=str)
     parser.add_argument("--reranker", default="", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
     parser.add_argument("--legal_data", default="saved_model/doc_refers_saved", type=str, help="path to legal corpus for reference")
-    parser.add_argument("--range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
+    parser.add_argument("--rerank-range-score", default=2.6, type=float, help="range of cos sin score for multiple-answer")
     parser.add_argument("--eval_size", default=0.2, type=float, help="number of eval data")
     parser.add_argument("--model_1_weight", default=0.5, type=float, help="number of eval data")
     parser.add_argument("--model_2_weight", default=0.5, type=float, help="number of eval data")
