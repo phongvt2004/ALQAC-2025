@@ -39,6 +39,19 @@
    pip install -r requirements.txt
    ```
 
+## Data Structure
+
+```
+root/
+├── ALQAC_2025_data/
+│   ├── alqac25_law.json
+│   ├── alqac25_train.json
+│   └── additional_data/
+│       └── zalo/           # Additional Zalo 
+├── retrieval/
+├── question_answering/    # Question Answering System
+```
+
 ## Running the Code
 ### Task 1: Legal Document Retrieval
 
