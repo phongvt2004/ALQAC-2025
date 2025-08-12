@@ -24,7 +24,7 @@ torchrun --nproc_per_node 2 \
     --deepspeed ./ds_stage0.json \
     --logging_steps 50 \
     --save_steps 1000 \
-    --hub_token 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 \
+    --hub_token  \
     --push_to_hub \
     --hub_model_id phonghoccode/ALQAC_2025_Reranker_top20_zalo
 torchrun --nproc_per_node 2 \
@@ -52,6 +52,6 @@ torchrun --nproc_per_node 2 \
     --deepspeed ./ds_stage0.json \
     --logging_steps 50 \
     --save_steps 1000 \
-    --hub_token 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 \
+    --hub_token  \
     --push_to_hub \
     --hub_model_id phonghoccode/ALQAC_2025_Reranker_top20_final
