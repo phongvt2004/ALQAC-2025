@@ -265,45 +265,17 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
     alphas = [0.3, 0.5, 0.7]
     for combine_type in tqdm(combine_types):
         for rerank_range_score in tqdm(rerank_range_scores_list, desc=f"Processing rerank_range_score"):
-            try:
-                args.model_1_weight = 0.5
-                args.model_2_weight = 0.5
-                args.rerank_range_score = rerank_range_score
-                args.combine_type = combine_type
-                args.alpha = 0
-                if combine_type == "weighted_sum":
-                    for retrieve_range_score in retrieve_range_scores_list[combine_type]:
-                        # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
-                        for alpha in alphas:
-                            args.alpha = alpha
-                            avg_f2, avg_precision, avg_recall = evaluation(
-                                args,
-                                data,
-                                models,
-                                emb_legal_data,
-                                bm25,
-                                doc_refers,
-                                question_embs,
-                                rerank_range_score,
-                                retrieve_range_score,
-                                reranker,
-                                tokenizer,
-                                others
-                            )
-                            result_row = {
-                                "rerank_range_score": rerank_range_score,
-                                "retrieve_range_score": retrieve_range_score,
-                                "combine_type": combine_type,
-                                "alpha": alpha,
-                                "avg_f2": avg_f2,
-                                "avg_precision": avg_precision,
-                                "avg_recall": avg_recall
-                            }
-                            results.append(result_row)
-                else:
-                    for retrieve_range_score in retrieve_range_scores_list[combine_type]:
-                        # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
-                        
+            # try:
+            args.model_1_weight = 0.5
+            args.model_2_weight = 0.5
+            args.rerank_range_score = rerank_range_score
+            args.combine_type = combine_type
+            args.alpha = 0
+            if combine_type == "weighted_sum":
+                for retrieve_range_score in retrieve_range_scores_list[combine_type]:
+                    # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
+                    for alpha in alphas:
+                        args.alpha = alpha
                         avg_f2, avg_precision, avg_recall = evaluation(
                             args,
                             data,
@@ -318,20 +290,48 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             tokenizer,
                             others
                         )
-
                         result_row = {
                             "rerank_range_score": rerank_range_score,
                             "retrieve_range_score": retrieve_range_score,
                             "combine_type": combine_type,
-                            "alpha": 0,
+                            "alpha": alpha,
                             "avg_f2": avg_f2,
                             "avg_precision": avg_precision,
                             "avg_recall": avg_recall
                         }
                         results.append(result_row)
-            except Exception as e:
-                print(f"Error in combination: {e}")
-                print(f"Skipping combination: rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
+            else:
+                for retrieve_range_score in retrieve_range_scores_list[combine_type]:
+                    # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
+                    
+                    avg_f2, avg_precision, avg_recall = evaluation(
+                        args,
+                        data,
+                        models,
+                        emb_legal_data,
+                        bm25,
+                        doc_refers,
+                        question_embs,
+                        rerank_range_score,
+                        retrieve_range_score,
+                        reranker,
+                        tokenizer,
+                        others
+                    )
+
+                    result_row = {
+                        "rerank_range_score": rerank_range_score,
+                        "retrieve_range_score": retrieve_range_score,
+                        "combine_type": combine_type,
+                        "alpha": 0,
+                        "avg_f2": avg_f2,
+                        "avg_precision": avg_precision,
+                        "avg_recall": avg_recall
+                    }
+                    results.append(result_row)
+            # except Exception as e:
+            #     print(f"Error in combination: {e}")
+            #     print(f"Skipping combination: rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
 
         # Save intermediate results after each run
     with open("grid_search_results.csv", "w", newline='') as csvfile:
