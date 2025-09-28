@@ -133,7 +133,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         with open("pre_laws.json", "r") as f:
             law_mapping = json.load(f)
     with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
-        corpus = json.load()
+        corpus = json.load(f)
     for item in corpus:
         laws.append(item["id"])
     with open(os.path.join(args.raw_data, "queries.json"), "r") as f:
