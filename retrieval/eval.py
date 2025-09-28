@@ -237,7 +237,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
                 
             if not is_match:
                 false_positive += 1
-                    
+        print(true_positive, false_positive, actual_positive)
         saved["ground_truth"] = relevant_articles  
         results.append(saved)
         precision = true_positive/(true_positive + false_positive + 1e-20)
@@ -275,7 +275,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                 args.alpha = 0
                 if combine_type == "weighted_sum":
                     for retrieve_range_score in retrieve_range_scores_list[combine_type]:
-                        print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
+                        # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
                         for alpha in alphas:
                             args.alpha = alpha
                             avg_f2, avg_precision, avg_recall = evaluation(
@@ -304,7 +304,7 @@ def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_e
                             results.append(result_row)
                 else:
                     for retrieve_range_score in retrieve_range_scores_list[combine_type]:
-                        print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
+                        # print(f"Evaluating with rerank_range_score={rerank_range_score}, retrieve_range_score={retrieve_range_score}, combine_type={combine_type}")
                         
                         avg_f2, avg_precision, avg_recall = evaluation(
                             args,
