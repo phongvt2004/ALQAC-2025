@@ -148,9 +148,6 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
-        if question_id not in eval_qid:
-            continue
-        print("ok")
         question = item["text"]
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
