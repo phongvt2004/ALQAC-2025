@@ -130,6 +130,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     laws = []
     law_mapping = {}
     if os.path.exists(os.path.join(args.raw_data, "pre_laws.json")):
+        print("Loading pre_laws.json")
         with open(os.path.join(args.raw_data, "pre_laws.json"), "r") as f:
             law_mapping = json.load(f)
     with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
