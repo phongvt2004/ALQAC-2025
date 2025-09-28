@@ -129,8 +129,8 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
     results = []
     full_results = []
     law_mapping = {}
-    if os.path.exists("pre_laws.json"):
-        with open("pre_laws.json", "r") as f:
+    if os.path.exists(os.path.join(args.raw_data, "pre_laws.json")):
+        with open(os.path.join(args.raw_data, "pre_laws.json"), "r") as f:
             law_mapping = json.load(f)
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
@@ -274,7 +274,7 @@ if __name__ == "__main__":
             if len(relevant_laws) == 0:
                 relevant_laws = laws
             law_mapping[question_id] = relevant_laws
-        with open("pre_laws.json", "w") as f:
+        with open(os.path.join(args.raw_data, "pre_laws.json"), "w") as f:
             json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     
     reranker_name = args.reranker if hasattr(args, 'reranker') else None
