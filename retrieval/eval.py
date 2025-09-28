@@ -372,7 +372,7 @@ if __name__ == "__main__":
     # define path to model
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
-    model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg"]
+    model_names = ["phonghoccode/ALQAC_2025_Embedding_final", "phonghoccode/ALQAC_2025_Embedding_final_wseg"]
 
     
     
@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
     # load question from json file
     question_items = load_question_json(args.raw_data)
-    train_path = os.path.join(args.raw_data, "alqac25_train.json")
+    train_path = os.path.join(args.raw_data, "alqac25_private_test_task2.json")
     data = json.load(open(train_path))
     print("Number of questions: ", len(question_items))
     models = []
