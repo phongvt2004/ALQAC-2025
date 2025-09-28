@@ -89,7 +89,7 @@ def load_models(root, model_names):
     return models
 
 def load_question_json(data_path):
-    question_data = json.load(open(os.path.join(data_path, "queries.json")))
+    question_data = json.load(open(os.path.join(data_path, "private_queries.json")))
     return question_data
 
 def combine_scores(dense_scores, bm25_scores, combine_type = "default", alpha=0.5, k = 60):
