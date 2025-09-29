@@ -228,7 +228,7 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw_data", default="../ALQAC_2025_data", type=str)
+    parser.add_argument("--raw_data", default="./ALQAC_2025_data", type=str)
     parser.add_argument("--saved_model", default="saved_model", type=str)
     parser.add_argument("--reranker", default="", type=str)
     parser.add_argument("--bm25_path", default="saved_model/bm25_Plus_04_06_model_full_manual_stopword", type=str)
