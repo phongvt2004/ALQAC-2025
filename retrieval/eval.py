@@ -129,9 +129,9 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     total_recall = 0
     laws = []
     law_mapping = {}
-    if os.path.exists(os.path.join(args.raw_data, "pre_laws.json")):
-        print("Loading pre_laws.json")
-        with open(os.path.join(args.raw_data, "pre_laws.json"), "r") as f:
+    if os.path.exists(os.path.join(args.raw_data, "pre_laws_5.json")):
+        print("Loading pre_laws_5.json")
+        with open(os.path.join(args.raw_data, "pre_laws_5.json"), "r") as f:
             law_mapping = json.load(f)
     with open(os.path.join(args.raw_data, "alqac25_law.json"), "r") as f:
         corpus = json.load(f)
@@ -258,7 +258,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
 def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
     results = []
     # Prepare result logging
-    rerank_range_scores_list = [0.05, 0.08, 0.1]
+    rerank_range_scores_list = [0.08, 0.1, 0.2]
     retrieve_range_scores_list = {
         #"default": [10, 15],
         "weighted_sum": [0.05, 0.08, 0.1],
@@ -374,7 +374,6 @@ if __name__ == "__main__":
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     # model_names = ["phonghoccode/ALQAC_2025_Embedding_top50_round1", "phonghoccode/ALQAC_2025_Embedding_top50_round1_wseg", "phonghoccode/ALQAC_2025_Qwen3_Embedding_top50"]
     model_names = ["phonghoccode/ALQAC_2025_Embedding_final", "phonghoccode/ALQAC_2025_Embedding_final_wseg"]
-
     
     
     reranker_name = args.reranker if hasattr(args, 'reranker') else None
