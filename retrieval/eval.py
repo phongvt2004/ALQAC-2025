@@ -153,8 +153,8 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
         relevant_articles = item["relevant_articles"]
         actual_positive = len(relevant_articles)
         weighted = [args.model_1_weight, args.model_2_weight, args.model_3_weight] 
-        relevant_laws = law_mapping[question_id]
-        # relevant_laws = laws
+        # relevant_laws = law_mapping[question_id]
+        relevant_laws = laws
         cos_sim = []
         for idx_2, _ in enumerate(models):
             emb1 = question_embs[idx_2][question_id]
