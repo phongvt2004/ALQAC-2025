@@ -258,7 +258,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
 def grid_search(args, data, models, emb_legal_data, bm25, doc_refers, question_embs):
     results = []
     # Prepare result logging
-    rerank_range_scores_list = [0.08, 0.1, 0.2]
+    rerank_range_scores_list = [0.1, 0.5, 1.0]
     retrieve_range_scores_list = {
         #"default": [10, 15],
         "weighted_sum": [0.05, 0.08, 0.1],
@@ -414,7 +414,7 @@ if __name__ == "__main__":
             if len(relevant_laws) == 0:
                 relevant_laws = laws
             law_mapping[question_id] = relevant_laws
-        with open("pre_laws.json", "w") as f:
+        with open("pre_laws_5.json", "w") as f:
             json.dump(law_mapping, f, indent=4, ensure_ascii=False)
     # load pre encoded for legal corpus
     if args.encode_legal_data:
