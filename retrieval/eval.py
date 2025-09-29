@@ -22,7 +22,7 @@ import itertools
 import csv
 # import llm_system
 load_dotenv()
-combine_types = ["weighted_sum"s]
+combine_types = ["weighted_sum"]
 
 def encode_legal_data(data_path, models, wseg):
     # print(legal_dict_json)
