@@ -129,8 +129,8 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
     results = []
     full_results = []
     law_mapping = {}
-    if os.path.exists(os.path.join(args.raw_data, "pre_laws.json")):
-        with open(os.path.join(args.raw_data, "pre_laws.json"), "r") as f:
+    if os.path.exists(os.path.join(args.raw_data, "pre_laws_5.json")):
+        with open(os.path.join(args.raw_data, "pre_laws_5.json"), "r") as f:
             law_mapping = json.load(f)
     for idx, item in tqdm(enumerate(data), total=len(data)):
         question_id = item["question_id"]
