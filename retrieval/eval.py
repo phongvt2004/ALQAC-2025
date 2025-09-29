@@ -236,7 +236,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
                 
             if not is_match:
                 false_positive += 1
-        print(true_positive, false_positive, actual_positive)
+        #print(true_positive, false_positive, actual_positive)
         saved["ground_truth"] = relevant_articles  
         results.append(saved)
         precision = true_positive/(true_positive + false_positive + 1e-20)
