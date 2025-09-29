@@ -183,11 +183,11 @@ def inference(args, data, models, emb_legal_data, bm25, doc_refers, question_emb
         if reranker is not None and len(final_predictions) > 1:
             # ...existing reranker code...
             rerank_scores = []
-            if len(final_predictions) > 100:
-                num_chunks = len(final_predictions) // 100 + 1
+            if len(final_predictions) > 20:
+                num_chunks = len(final_predictions) // 20 + 1
                 rerank_scores = []
                 for i in range(num_chunks):
-                    chunk_ids = final_predictions[i * 100: (i + 1) * 100]
+                    chunk_ids = final_predictions[i * 20: (i + 1) * 20]
                     if len(chunk_ids) == 0:
                         continue
                     rerank_scores.extend(reranking(reranker, tokenizer, question, [doc_refers[i][2] for i in chunk_ids], others))
