@@ -144,7 +144,7 @@ def evaluation(args, data, models, emb_legal_data, bm25, doc_refers, question_em
     random.shuffle(qid_list)
     num_eval = int(len(qid_list) * args.eval_size)
     eval_qid = qid_list[:num_eval]
-    k = num_eval
+    k = len(data)
     results = []
     
     for idx, item in tqdm(enumerate(data), total=len(data)):
